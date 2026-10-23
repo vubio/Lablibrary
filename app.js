@@ -21,7 +21,7 @@ function refreshSyncStatus(){
   if(state.busy){label='Syncing with GitHub…';detail='Uploading shared records';}
   else if(state.networkError){label='GitHub sync needs attention';detail='Your unsynced edits remain on this device';dot.classList.add('error');}
   else if(state.dirty){label=state.token?'Changes waiting to upload':'Local changes only';detail=state.token?'GitHub sync is queued':'Not yet available on other computers';}
-  else if(state.token){label='GitHub synchronized';detail='Shared records available on other computers';dot.classList.add('ok');}
+  else if(state.token){label='Library loaded from GitHub';detail='Shared data available anywhere • write access checked on upload';dot.classList.add('ok');}
   else{label='Viewing GitHub library';detail='Shared data loads anywhere • connect to publish edits';dot.classList.add('ok');}
   $('syncLabel').textContent=label;$('syncDetail').textContent=detail;
   $('saveBtn').textContent=state.busy?'↻ Saving…':state.dirty?'↻ Upload changes':'↻ Sync with GitHub';$('saveBtn').disabled=state.busy;
@@ -287,13 +287,13 @@ async function syncNow(){
     if(remote.sha!==state.baseSha){const merged=mergeDatabases(state.baseDb,upload,remote.db);if(merged.conflicts.length){
       throw new Error(`Conflict in ${merged.conflicts.slice(0,3).join(', ')}. Your local draft remains safe; export a backup and reload to reconcile.`);
     }upload=merged.database;}
-    if(!state.dirty){state.db=remote.db;state.baseDb=structuredClone(remote.db);state.baseSha=remote.sha;persistLocal();render();toast('Fetched the latest library.');return;}
+    if(!state.dirty){state.db=remote.db;state.baseDb=structuredClone(remote.db);state.baseSha=remote.sha;state.networkError='';setNotice('');persistLocal();render();toast('Fetched the latest library.');return;}
     const payload={message:`Update research library (${new Date().toISOString()})`,content:b64encode(JSON.stringify(upload,null,2)+'\n'),branch:'main'};
     if(remote.sha)payload.sha=remote.sha;
     const response=await githubRequest(API,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     state.baseDb=structuredClone(upload);state.baseSha=response.content?.sha||null;
     if(state.revision===startRevision){state.db=upload;state.dirty=false;}
-    persistLocal();render();toast('Library saved to GitHub.');
+    state.networkError='';setNotice('');persistLocal();render();toast('Library saved to GitHub.');
     if(state.dirty){state.syncTimer=setTimeout(()=>syncNow(),2000);}
   }catch(err){
     const forbidden=/GitHub 403:.*(?:Resource not accessible by personal access token|Forbidden)/i.test(err.message);
@@ -310,7 +310,7 @@ async function initData(){
   try{
     const remote=await fetchRemote();
     if(local?.dirty){state.db=normalizeDatabase(local.db);state.baseDb=normalizeDatabase(local.baseDb);state.baseSha=local.baseSha;state.dirty=true;setNotice('You have unsynced edits on this device. They were restored safely; connect and sync when ready.');}
-    else{state.db=remote.db;state.baseDb=structuredClone(remote.db);state.baseSha=remote.sha;state.dirty=false;}
+    else{state.db=remote.db;state.baseDb=structuredClone(remote.db);state.baseSha=remote.sha;state.dirty=false;setNotice('');}
     state.networkError='';
   }catch(err){state.db=normalizeDatabase(local?.db);state.baseDb=normalizeDatabase(local?.baseDb);state.baseSha=local?.baseSha||null;state.dirty=!!local?.dirty;state.networkError=err.message;setNotice('Could not reach GitHub. Working from this browser’s last saved copy.',true);}
   persistLocal();render();if(state.token&&state.dirty)setTimeout(()=>syncNow(),1000);
@@ -384,7 +384,7 @@ function registerEvents(){
   $('connectBtn').addEventListener('click',openGithubConnection);
   $('syncGuideConnect').addEventListener('click',openGithubConnection);
   $('connectForm').addEventListener('submit',async event=>{event.preventDefault();const token=$('tokenInput').value.trim();if(!token){$('connectionMessage').textContent='Enter a fine-grained token to connect.';return;}
-    state.token=token;try{await githubRequest(`https://api.github.com/repos/${REPOSITORY}`);sessionStorage.setItem(TOKEN_KEY,token);$('connectionMessage').textContent='Connected. Your token is available only in this tab session.';closeModal('connectDialog');state.networkError='';refreshSyncStatus();toast('Token accepted for reading. Checking GitHub write access when saving.');if(state.dirty)syncNow();}catch(err){state.token='';$('connectionMessage').textContent=`Could not connect: ${err.message}`;}
+    state.token=token;try{await githubRequest(`https://api.github.com/repos/${REPOSITORY}`);sessionStorage.setItem(TOKEN_KEY,token);$('connectionMessage').textContent='Connected. Your token is available only in this tab session.';closeModal('connectDialog');state.networkError='';if(!state.dirty)setNotice('');refreshSyncStatus();toast('Token accepted for reading. Checking GitHub write access when saving.');if(state.dirty)syncNow();}catch(err){state.token='';$('connectionMessage').textContent=`Could not connect: ${err.message}`;}
   });
   $('disconnectBtn').addEventListener('click',()=>{state.token='';sessionStorage.removeItem(TOKEN_KEY);$('tokenInput').value='';$('connectionMessage').textContent='Token forgotten for this browser session.';refreshSyncStatus();toast('Token removed from this session.');});
   $('saveBtn').addEventListener('click',syncNow);

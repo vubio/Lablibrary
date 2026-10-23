@@ -1,0 +1,292 @@
+import {
+  REPOSITORY,DATA_PATH,DEFAULT_COLUMNS,AUTO_COLUMNS,emptyDatabase,normalizeDatabase,
+  makeId,keyFor,recentFirst,groupItems,fieldOrder,displayValue,formatTime,
+  addColumn,mergeDatabases,importRows,toCsv
+} from './model.js';
+
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LOCAL_KEY='vubio-lablibrary-local-v1',TOKEN_KEY='vubio-lablibrary-token-session';
+const API=`https://api.github.com/repos/${REPOSITORY}/contents/${DATA_PATH}`;
+const state={db:emptyDatabase(),baseDb:emptyDatabase(),baseSha:null,dirty:false,revision:0,token:sessionStorage.getItem(TOKEN_KEY)||'',busy:false,networkError:'',currentPage:'library',selected:new Map(),expanded:new Set(),checkoutExpanded:new Set(),editingId:null,cloning:false,fieldDraft:{},syncTimer:null,toastTimer:null};
+
+function toast(message,error=false){const el=$('toast');el.textContent=message;el.classList.toggle('error',error);el.classList.remove('hidden');clearTimeout(state.toastTimer);state.toastTimer=setTimeout(()=>el.classList.add('hidden'),3600);}
+function setNotice(message='',danger=false){$('notice').textContent=message;$('notice').classList.toggle('hidden',!message);$('notice').classList.toggle('danger',danger);}
+function getLocal(){try{return JSON.parse(localStorage.getItem(LOCAL_KEY)||'null');}catch{return null;}}
+function persistLocal(){try{localStorage.setItem(LOCAL_KEY,JSON.stringify({db:state.db,baseDb:state.baseDb,baseSha:state.baseSha,dirty:state.dirty}));}catch{setNotice('Browser storage is full or unavailable. Export a JSON backup to avoid losing edits.',true);}}
+function changed(){state.dirty=true;state.revision++;persistLocal();render();refreshSyncStatus();if(state.token){clearTimeout(state.syncTimer);state.syncTimer=setTimeout(()=>syncNow(),7000);}}
+function refreshSyncStatus(){
+  const dot=$('syncDot');dot.className='sync-dot';
+  let label,detail;
+  if(state.busy){label='Syncing…';detail='Saving to GitHub';}
+  else if(state.networkError){label='Sync needs attention';detail='Your local edits are preserved';dot.classList.add('error');}
+  else if(state.dirty){label=state.token?'Changes pending':'Saved on this device';detail=state.token?'GitHub sync is queued':'Connect GitHub for cross-device sync';}
+  else {label='GitHub up to date';detail=state.token?'Connected • autosync on':'View access • connect to edit';dot.classList.add('ok');}
+  $('syncLabel').textContent=label;$('syncDetail').textContent=detail;
+  $('saveBtn').textContent=state.busy?'↻ Saving…':state.dirty?'↻ Save changes':'↻ Sync now';$('saveBtn').disabled=state.busy;
+}
+function safeCategories(){return [...new Set([...state.db.categories,...state.db.items.map(x=>x.category)])].filter(Boolean);}
+function countCategories(){return new Set(state.db.items.map(x=>x.category)).size;}
+function allGroups(){return groupItems(state.db.items);}
+
+function render(){renderStats();renderCategories();renderLibrary();renderPicker();renderCheckout();refreshSyncStatus();}
+function renderStats(){const groups=allGroups();$('statItems').textContent=groups.length;$('statCategories').textContent=countCategories();$('statVersions').textContent=Math.max(0,state.db.items.length-groups.length);$('libraryCount').textContent=groups.length;$('checkoutCount').textContent=state.selected.size;}
+function renderCategories(){
+  const categories=safeCategories(),counts=new Map();for(const g of allGroups())counts.set(g.latest.category,(counts.get(g.latest.category)||0)+1);
+  const active=$('libraryCategory').value;
+  $('categoryNav').innerHTML=categories.filter(c=>counts.get(c)).sort((a,b)=>a.localeCompare(b)).map(c=>`<button class="category-link ${active===c?'active':''}" data-filter-category="${esc(c)}"><span></span><span>${esc(c)}</span><small>${counts.get(c)}</small></button>`).join('');
+  for(const id of ['libraryCategory','checkoutCategory']){
+    const select=$(id),value=select.value;select.innerHTML='<option value="">All categories</option>'+categories.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');select.value=value;
+  }
+}
+function renderLibrary(){
+  const term=$('librarySearch').value.trim().toLocaleLowerCase(),category=$('libraryCategory').value;
+  const matches=allGroups().filter(g=>g.items.some(it=>(!category||it.category===category)&&(!term||[it.name,it.category,...Object.values(it.values||{})].some(x=>String(x).toLocaleLowerCase().includes(term)))));
+  const cols=[AUTO_COLUMNS[0],AUTO_COLUMNS[1],...(category?fieldOrder(state.db,category):state.db.columns),AUTO_COLUMNS[2]];
+  const table=$('libraryTable');table.querySelector('thead').innerHTML=`<tr>${cols.map(c=>`<th>${esc(c.label)}</th>`).join('')}<th>Actions</th></tr>`;
+  table.querySelector('tbody').innerHTML=matches.map(g=>{
+    const chosen=g.items.find(it=>(!category||it.category===category)&&(!term||[it.name,it.category,...Object.values(it.values||{})].some(x=>String(x).toLocaleLowerCase().includes(term))))||g.latest;
+    const latest=g.latest;const expanded=state.expanded.has(g.key);const multi=g.items.length>1;
+    let body=renderLibraryRow(latest,cols,multi?g.key:null,false,expanded);
+    if(expanded)body+=g.items.slice(1).map(it=>renderLibraryRow(it,cols,null,true,false)).join('');
+    return body;
+  }).join('');
+  const noRecords=state.db.items.length===0;$('emptyLibrary').classList.toggle('hidden',!noRecords);table.classList.toggle('hidden',noRecords);
+  $('libraryFootnote').textContent=`Showing ${matches.length} unique item${matches.length===1?'':'s'} · ${state.db.items.length} total records`;
+}
+function renderLibraryRow(item,cols,groupKey,isOld,expanded){
+  return `<tr class="${isOld?'version-row':''}" data-row-id="${esc(item.id)}">${cols.map(col=>{
+    const id=col.id;
+    if(id==='name')return `<td class="name-cell"><div class="table-name">${groupKey?`<button class="versions-toggle" data-expand="${esc(groupKey)}" aria-label="${expanded?'Hide':'Show'} previous versions">${expanded?'⌄':'›'}</button>`:'<span class="name-spacer"></span>'}<span class="editable-cell" data-edit="name" data-id="${esc(item.id)}">${esc(item.name)}</span>${groupKey?`<span class="version-badge">${groupItems(state.db.items).find(g=>g.key===groupKey)?.items.length||0} versions</span>`:isOld?'<span class="version-badge">Earlier</span>':''}</div></td>`;
+    return `<td class="${id==='category'?'category-cell':''} ${id==='enteredAt'?'':'editable-cell'}" ${id==='enteredAt'?'':`data-edit="${esc(id)}" data-id="${esc(item.id)}" title="Click to edit"`}>${esc(displayValue(item,id))||'<span style="color:#c6d2cb">—</span>'}</td>`;
+  }).join('')}<td><div class="row-actions"><button class="row-icon-btn" data-edit-item="${esc(item.id)}">Edit</button><button class="row-icon-btn" data-copy-version="${esc(item.id)}">＋ Version</button></div></td></tr>`;
+}
+function renderPicker(){
+  const term=$('checkoutSearch').value.trim().toLowerCase(),category=$('checkoutCategory').value;
+  const matches=allGroups().filter(g=>g.items.some(it=>(!category||it.category===category)&&(!term||[it.name,it.category,...Object.values(it.values||{})].some(v=>String(v).toLowerCase().includes(term)))));
+  $('pickerList').innerHTML=matches.map(g=>{
+    const selectedId=state.selected.get(g.key),checked=!!selectedId,hasOld=g.items.length>1,expanded=state.checkoutExpanded.has(g.key)||checked&&hasOld;
+    return `<div class="picker-group"><div class="picker-head"><input type="checkbox" data-check-group="${esc(g.key)}" ${checked?'checked':''} aria-label="Select ${esc(g.latest.name)}" /><div class="picker-title">${esc(g.latest.name)}<div class="picker-sub">${esc(g.latest.category)} ${hasOld?` · ${g.items.length} versions`:''}</div></div>${hasOld?`<button class="toggle-link" data-toggle-picker="${esc(g.key)}" aria-label="Show versions">${expanded?'⌄':'›'}</button>`:''}</div>${expanded&&hasOld?`<div class="picker-versions">${g.items.map((it,index)=>`<label class="version-choice"><input type="radio" name="pick_${esc(g.key)}" data-choose-version="${esc(g.key)}" value="${esc(it.id)}" ${selectedId===it.id?'checked':''} /><span>${index===0?'Newest · ':'Version · '}${esc(formatTime(it.enteredAt))}</span><small>${esc(it.values?.lotNumber||it.values?.workingConcentration||'')}</small></label>`).join('')}</div>`:''}</div>`;
+  }).join('')||'<div class="empty-preview"><p>No matching items.</p></div>';
+}
+function selectedItems(){return [...state.selected.values()].map(id=>state.db.items.find(it=>it.id===id)).filter(Boolean);}
+function orderedCategories(categories){const preferred=state.db.preferences.categoryOrder;return [...categories].sort((a,b)=>{const ia=preferred.indexOf(a),ib=preferred.indexOf(b);return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b);});}
+function orderedItems(items,category){const preferred=state.db.preferences.itemOrder[category]||[];return [...items].sort((a,b)=>{const ia=preferred.indexOf(a.id),ib=preferred.indexOf(b.id);return (ia<0?999:ia)-(ib<0?999:ib)||a.name.localeCompare(b.name);});}
+function checkoutColumns(items){const cols=[AUTO_COLUMNS[0],...state.db.columns,AUTO_COLUMNS[2]];return cols.filter(c=>c.id==='name'||c.id==='enteredAt'||items.some(it=>String(displayValue(it,c.id)||'').trim()));}
+function renderCheckout(){
+  const items=selectedItems(),byCategory=new Map();for(const it of items){if(!byCategory.has(it.category))byCategory.set(it.category,[]);byCategory.get(it.category).push(it);}
+  $('previewCount').textContent=`${items.length} selected`;$('checkoutCount').textContent=items.length;
+  $('copyCheckout').disabled=$('copyBottom').disabled=!items.length;
+  if(!items.length){$('checkoutPreview').innerHTML='<div class="empty-preview"><span>☑</span><h3>Nothing selected yet</h3><p>Tick materials on the left to build your experiment record.</p></div>';return;}
+  $('checkoutPreview').innerHTML=orderedCategories([...byCategory.keys()]).map(category=>{
+    const rows=orderedItems(byCategory.get(category),category),allCols=checkoutColumns(rows),excluded=state.db.preferences.excludedColumns[category]||[];
+    const visible=allCols.filter(c=>!excluded.includes(c.id));
+    return `<section class="checkout-card" data-category="${esc(category)}"><div class="checkout-card-head"><button class="drag-handle" draggable="true" data-drag-category="${esc(category)}" title="Drag to reorder tables">≡</button><span class="checkout-card-title">${esc(category)}</span><span class="checkout-card-subtitle">${rows.length} item${rows.length>1?'s':''}</span></div><div class="field-chips">${allCols.map(c=>`<label class="field-chip"><input type="checkbox" data-column-category="${esc(category)}" data-column-id="${esc(c.id)}" ${excluded.includes(c.id)?'':'checked'} />${esc(c.label)}</label>`).join('')}</div><div class="export-scroll"><table class="export-table"><thead><tr><th class="item-handle"></th>${visible.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead><tbody>${rows.map(it=>`<tr data-preview-row="${esc(it.id)}"><td class="item-handle"><button class="drag-handle" draggable="true" data-drag-item="${esc(it.id)}" data-drag-item-category="${esc(category)}" title="Drag to reorder items">≡</button></td>${visible.map(c=>`<td contenteditable="true" spellcheck="false" title="Edit only this checkout copy">${esc(displayValue(it,c.id))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`;
+  }).join('');
+}
+
+function showPage(page){state.currentPage=page;$('libraryScreen').classList.toggle('hidden',page!=='library');$('checkoutScreen').classList.toggle('hidden',page!=='checkout');$('navLibrary').classList.toggle('active',page==='library');$('navCheckout').classList.toggle('active',page==='checkout');$('currentPage').textContent=page==='library'?'LIBRARY':'EXPERIMENT CHECKOUT';if(page==='checkout')renderCheckout();}
+function openModal(id){$(id).showModal();}
+function closeModal(id){$(id).close();}
+function itemById(id){return state.db.items.find(x=>x.id===id);}
+function collectFields(){const values={...state.fieldDraft};$('itemFields').querySelectorAll('[data-form-col]').forEach(input=>{values[input.dataset.formCol]=input.value;});return values;}
+function renderItemFields(){
+  const category=$('itemCategory').value.trim(),cols=fieldOrder(state.db,category),existing=state.db.items.filter(it=>it.category.toLowerCase()===category.toLowerCase());
+  $('smartHint').textContent=existing.length?`${existing.length} earlier entr${existing.length===1?'y':'ies'} · frequently used fields first`:'All fields available for this new category';
+  $('itemFields').innerHTML=cols.map(col=>{
+    const value=state.fieldDraft[col.id]||'';
+    const suggestions=[...new Set(existing.map(it=>it.values?.[col.id]).filter(Boolean))].slice(-15);
+    return `<label class="form-field"><span>${esc(col.label)}</span><input data-form-col="${esc(col.id)}" value="${esc(value)}" list="suggest_${esc(col.id)}" autocomplete="off" placeholder="${suggestions.length?'Reuse or enter…':'Optional'}" /><datalist id="suggest_${esc(col.id)}">${suggestions.map(x=>`<option value="${esc(x)}"></option>`).join('')}</datalist></label>`;
+  }).join('');
+}
+function warningForName(){
+  const name=$('itemName').value.trim(),match=allGroups().find(g=>g.key===keyFor(name));
+  const warning=$('versionWarning');
+  if(!state.editingId&&!state.cloning&&match){warning.classList.remove('hidden');warning.innerHTML=`A record named <strong>${esc(match.latest.name)}</strong> exists (${match.items.length} version${match.items.length>1?'s':''}). Saving this name will create a new version.`;}
+  else warning.classList.add('hidden');
+}
+function openItemDialog(item=null,clone=false,presetCategory=''){
+  state.editingId=item&&!clone?item.id:null;state.cloning=!!clone;state.fieldDraft={...(item?.values||{})};
+  $('itemDialogTitle').textContent=clone?'New version of item':item?'Edit research item':'New research item';
+  $('submitItem').textContent=clone?'Create version':item?'Save changes':'Save item';
+  $('itemName').value=item?.name||'';$('itemCategory').value=item?.category||presetCategory;
+  $('categorySuggestions').innerHTML=safeCategories().map(c=>`<option value="${esc(c)}"></option>`).join('');
+  renderItemFields();warningForName();openModal('itemDialog');if(!item)$('itemName').focus();
+}
+function submitItem(event){
+  event.preventDefault();const name=$('itemName').value.trim(),category=$('itemCategory').value.trim();if(!name||!category){toast('Name and category are required.',true);return;}
+  const values={};for(const [key,value] of Object.entries(collectFields()))if(String(value||'').trim())values[key]=String(value).trim();
+  if(!state.editingId&&!state.cloning&&state.db.items.some(it=>keyFor(it.name)===keyFor(name))&&!window.confirm(`“${name}” already exists. Create a new version with this same name?`))return;
+  if(!state.db.categories.includes(category))state.db.categories.push(category);
+  if(state.editingId){const item=itemById(state.editingId);if(item){item.name=name;item.category=category;item.values=values;item.updatedAt=new Date().toISOString();}}
+  else {const stamp=new Date().toISOString();state.db.items.push({id:makeId(),name,category,values,enteredAt:stamp,updatedAt:stamp});}
+  closeModal('itemDialog');changed();toast(state.editingId?'Item updated.':'Item version saved.');
+}
+function inlineEdit(el){
+  if(el.querySelector('input'))return;
+  const id=el.dataset.id,column=el.dataset.edit,item=itemById(id);if(!item)return;
+  const current=column==='name'?item.name:column==='category'?item.category:String(item.values[column]||'');
+  const input=document.createElement('input');input.className='inline-cell';input.value=current;el.replaceChildren(input);input.focus();input.select();
+  let finished=false;
+  const finish=save=>{if(finished)return;finished=true;const next=input.value.trim();if(save&&next!==current){if((column==='name'||column==='category')&&!next){toast('Name and category cannot be empty.',true);}else{if(column==='name')item.name=next;else if(column==='category'){item.category=next;if(!state.db.categories.includes(next))state.db.categories.push(next);}else if(next)item.values[column]=next;else delete item.values[column];item.updatedAt=new Date().toISOString();changed();return;}}renderLibrary();};
+  input.addEventListener('blur',()=>finish(true),{once:true});input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();finish(true);}if(event.key==='Escape'){event.preventDefault();finish(false);}});
+}
+
+function setSelection(key,itemId){if(itemId){state.selected.set(key,itemId);state.checkoutExpanded.add(key);}else state.selected.delete(key);renderStats();renderPicker();renderCheckout();}
+function applyColumnChoice(category,id,checked){
+  const set=new Set(state.db.preferences.excludedColumns[category]||[]);
+  if(checked)set.delete(id);else set.add(id);
+  state.db.preferences.excludedColumns[category]=[...set];changed();
+}
+
+// Drag-and-drop order lives with category preferences, not on the underlying inventory rows.
+let dragging=null;
+function onDragStart(event){
+  const handle=event.target.closest('[data-drag-category],[data-drag-item]');if(!handle)return;
+  dragging=handle.dataset.dragCategory?{kind:'category',id:handle.dataset.dragCategory}:{kind:'item',id:handle.dataset.dragItem,category:handle.dataset.dragItemCategory};
+  event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',dragging.id);
+  handle.closest('.checkout-card,[data-preview-row]')?.classList.add('dragging');
+}
+function onDragOver(event){if(dragging&&event.target.closest('.checkout-card,[data-preview-row]'))event.preventDefault();}
+function onDrop(event){if(!dragging)return;event.preventDefault();
+  if(dragging.kind==='category'){
+    const card=event.target.closest('.checkout-card');const target=card?.dataset.category;
+    if(target&&target!==dragging.id){const present=orderedCategories([...new Set(selectedItems().map(it=>it.category))]);const from=present.indexOf(dragging.id),to=present.indexOf(target);present.splice(from,1);present.splice(to,0,dragging.id);state.db.preferences.categoryOrder=present;changed();}
+  }else{
+    const row=event.target.closest('[data-preview-row]');const target=row?.dataset.previewRow;
+    const members=orderedItems(selectedItems().filter(it=>it.category===dragging.category),dragging.category).map(it=>it.id);
+    if(target&&members.includes(target)&&target!==dragging.id){members.splice(members.indexOf(dragging.id),1);members.splice(members.indexOf(target),0,dragging.id);state.db.preferences.itemOrder[dragging.category]=members;changed();}
+  }
+  dragging=null;
+}
+function onDragEnd(){dragging=null;document.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging'));}
+
+function cleanCheckoutHtml(){
+  const cards=[...document.querySelectorAll('#checkoutPreview .checkout-card')];const htmlParts=[],plainParts=[];
+  for(const card of cards){
+    const category=card.dataset.category,table=card.querySelector('.export-table');if(!table)continue;
+    const columns=[...table.querySelectorAll('thead th')].slice(1).map(th=>th.textContent.trim());
+    const htmlRows=[],plainRows=[];
+    for(const tr of table.querySelectorAll('tbody tr')){
+      const cells=[...tr.querySelectorAll('td')].slice(1);
+      htmlRows.push('<tr>'+cells.map(td=>`<td style="border:1px solid #c8d7cd;padding:7px 9px;vertical-align:top">${td.innerHTML}</td>`).join('')+'</tr>');
+      plainRows.push(cells.map(td=>td.innerText.replaceAll('\t',' ').replaceAll('\n',' ')).join('\t'));
+    }
+    htmlParts.push(`<h3 style="font-family:Arial,sans-serif;color:#185d46;margin:16px 0 6px">${esc(category)}</h3><table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:11pt"><thead><tr>${columns.map(c=>`<th style="border:1px solid #c8d7cd;padding:7px 9px;background:#e9f3ec;text-align:left">${esc(c)}</th>`).join('')}</tr></thead><tbody>${htmlRows.join('')}</tbody></table>`);
+    plainParts.push([category,columns.join('\t'),...plainRows].join('\n'));
+  }
+  return {html:htmlParts.join('<p></p>'),plain:plainParts.join('\n\n')};
+}
+async function copyCheckout(){const {html,plain}=cleanCheckoutHtml();if(!plain){toast('Choose an item first.',true);return;}
+  try{if(navigator.clipboard?.write&&typeof ClipboardItem!=='undefined')await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([plain],{type:'text/plain'})})]);else if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(plain);else throw new Error('Clipboard not available');toast('Copied! Paste your tables into OneNote, Word, or your lab notes.');}
+  catch(err){toast(`Clipboard unavailable: ${err.message}. Please use a secure (HTTPS) browser.`,true);}
+}
+
+function b64encode(text){const bytes=new TextEncoder().encode(text);let s='';for(let i=0;i<bytes.length;i+=8192)s+=String.fromCharCode(...bytes.subarray(i,i+8192));return btoa(s);}
+function b64decode(text){const binary=atob(text.replace(/\s/g,''));const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));return new TextDecoder().decode(bytes);}
+async function githubRequest(url,options={}){
+  const headers={'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(options.headers||{})};
+  if(state.token)headers.Authorization=`Bearer ${state.token}`;
+  const response=await fetch(url,{...options,headers,cache:'no-store'});
+  if(response.status===404&&options.allowNotFound)return null;
+  if(!response.ok){let description='';try{description=(await response.json()).message||'';}catch{}throw new Error(`GitHub ${response.status}: ${description||response.statusText}`);}
+  return response.json();
+}
+async function fetchRemote(){const response=await githubRequest(`${API}?ref=main&_=${Date.now()}`,{allowNotFound:true});if(!response)return {db:emptyDatabase(),sha:null};
+  if(response.type!=='file'||!response.content)throw new Error('GitHub did not return the database file.');
+  return {db:normalizeDatabase(JSON.parse(b64decode(response.content))),sha:response.sha};
+}
+async function syncNow(){
+  clearTimeout(state.syncTimer);
+  if(state.busy)return;
+  if(!state.token){openModal('connectDialog');toast('Connect a repository-limited GitHub token to save across computers.');return;}
+  state.busy=true;state.networkError='';refreshSyncStatus();const startRevision=state.revision;
+  try{
+    const remote=await fetchRemote();let upload=structuredClone(state.db);
+    if(remote.sha!==state.baseSha){const merged=mergeDatabases(state.baseDb,upload,remote.db);if(merged.conflicts.length){
+      throw new Error(`Conflict in ${merged.conflicts.slice(0,3).join(', ')}. Your local draft remains safe; export a backup and reload to reconcile.`);
+    }upload=merged.database;}
+    if(!state.dirty){state.db=remote.db;state.baseDb=structuredClone(remote.db);state.baseSha=remote.sha;persistLocal();render();toast('Fetched the latest library.');return;}
+    const payload={message:`Update research library (${new Date().toISOString()})`,content:b64encode(JSON.stringify(upload,null,2)+'\n'),branch:'main'};
+    if(remote.sha)payload.sha=remote.sha;
+    const response=await githubRequest(API,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    state.baseDb=structuredClone(upload);state.baseSha=response.content?.sha||null;
+    if(state.revision===startRevision){state.db=upload;state.dirty=false;}
+    persistLocal();render();toast('Library saved to GitHub.');
+    if(state.dirty){state.syncTimer=setTimeout(()=>syncNow(),2000);}
+  }catch(err){state.networkError=err.message;setNotice(`${err.message} Your local draft is still stored in this browser.`,true);toast('GitHub sync failed; your changes are safe locally.',true);}
+  finally{state.busy=false;refreshSyncStatus();}
+}
+async function initData(){
+  const local=getLocal();
+  try{
+    const remote=await fetchRemote();
+    if(local?.dirty){state.db=normalizeDatabase(local.db);state.baseDb=normalizeDatabase(local.baseDb);state.baseSha=local.baseSha;state.dirty=true;setNotice('You have unsynced edits on this device. They were restored safely; connect and sync when ready.');}
+    else{state.db=remote.db;state.baseDb=structuredClone(remote.db);state.baseSha=remote.sha;state.dirty=false;}
+    state.networkError='';
+  }catch(err){state.db=normalizeDatabase(local?.db);state.baseDb=normalizeDatabase(local?.baseDb);state.baseSha=local?.baseSha||null;state.dirty=!!local?.dirty;state.networkError=err.message;setNotice('Could not reach GitHub. Working from this browser’s last saved copy.',true);}
+  persistLocal();render();if(state.token&&state.dirty)setTimeout(()=>syncNow(),1000);
+}
+
+function download(name,content,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
+async function importFile(file){
+  try{
+    const text=await file.text();let total=0;
+    if(file.name.toLowerCase().endsWith('.json')){
+      const source=JSON.parse(text);if(!Array.isArray(source.items))throw new Error('This JSON does not contain Lab Library items.');
+      const imported=normalizeDatabase(source);for(const cat of imported.categories)if(!state.db.categories.includes(cat))state.db.categories.push(cat);
+      for(const col of imported.columns)if(!state.db.columns.some(c=>c.id===col.id))state.db.columns.push(col);
+      const ids=new Set(state.db.items.map(it=>it.id));for(const item of imported.items)if(!ids.has(item.id)){state.db.items.push(item);ids.add(item.id);total++;}
+    }else total=importRows(state.db,text,file.name.toLowerCase().endsWith('.tsv')?'\t':',');
+    if(total){changed();$('importMessage').textContent=`Successfully added ${total} item rows. Sync to GitHub when ready.`;toast(`${total} records imported.`);}else $('importMessage').textContent='No new records to add.';
+  }catch(err){$('importMessage').textContent=`Import failed: ${err.message}`;toast(err.message,true);}
+}
+
+function registerEvents(){
+  $('navLibrary').addEventListener('click',()=>showPage('library'));
+  $('navCheckout').addEventListener('click',()=>showPage('checkout'));
+  $('addItemBtn').addEventListener('click',()=>openItemDialog());$('emptyAdd').addEventListener('click',()=>openItemDialog());
+  $('addCategoryBtn').addEventListener('click',()=>{openItemDialog();$('itemCategory').focus();});
+  $('librarySearch').addEventListener('input',renderLibrary);$('checkoutSearch').addEventListener('input',renderPicker);
+  $('libraryCategory').addEventListener('change',()=>{renderCategories();renderLibrary();});$('checkoutCategory').addEventListener('change',renderPicker);
+  $('categoryNav').addEventListener('click',event=>{const btn=event.target.closest('[data-filter-category]');if(btn){showPage('library');$('libraryCategory').value=btn.dataset.filterCategory;renderCategories();renderLibrary();}});
+  $('libraryTable').addEventListener('click',event=>{
+    const toggle=event.target.closest('[data-expand]');if(toggle){const key=toggle.dataset.expand;if(state.expanded.has(key))state.expanded.delete(key);else state.expanded.add(key);renderLibrary();return;}
+    const version=event.target.closest('[data-copy-version]');if(version){openItemDialog(itemById(version.dataset.copyVersion),true);return;}
+    const edit=event.target.closest('[data-edit-item]');if(edit){openItemDialog(itemById(edit.dataset.editItem));return;}
+    const cell=event.target.closest('[data-edit]');if(cell)inlineEdit(cell);
+  });
+  $('itemCategory').addEventListener('change',()=>{state.fieldDraft=collectFields();renderItemFields();});
+  $('itemCategory').addEventListener('input',()=>{state.fieldDraft=collectFields();renderItemFields();});
+  $('itemName').addEventListener('input',warningForName);$('itemForm').addEventListener('submit',submitItem);
+  $('cancelItem').addEventListener('click',()=>closeModal('itemDialog'));
+  $('addFieldBtn').addEventListener('click',()=>{state.fieldDraft=collectFields();$('newFieldName').value='';openModal('fieldDialog');$('newFieldName').focus();});
+  $('fieldForm').addEventListener('submit',event=>{event.preventDefault();const label=$('newFieldName').value.trim();if(!label)return;const col=addColumn(state.db,label);closeModal('fieldDialog');renderItemFields();document.querySelector(`[data-form-col="${CSS.escape(col.id)}"]`)?.focus();changed();});
+  document.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',()=>closeModal(btn.dataset.close)));
+  $('pickerList').addEventListener('change',event=>{
+    if(event.target.matches('[data-check-group]')){const key=event.target.dataset.checkGroup,g=allGroups().find(x=>x.key===key);setSelection(key,event.target.checked?g?.latest.id:null);}
+    if(event.target.matches('[data-choose-version]'))setSelection(event.target.dataset.chooseVersion,event.target.value);
+  });
+  $('pickerList').addEventListener('click',event=>{const button=event.target.closest('[data-toggle-picker]');if(button){const key=button.dataset.togglePicker;if(state.checkoutExpanded.has(key))state.checkoutExpanded.delete(key);else state.checkoutExpanded.add(key);renderPicker();}});
+  $('clearSelection').addEventListener('click',()=>{state.selected.clear();renderStats();renderPicker();renderCheckout();});
+  $('checkoutPreview').addEventListener('change',event=>{if(event.target.matches('[data-column-id]'))applyColumnChoice(event.target.dataset.columnCategory,event.target.dataset.columnId,event.target.checked);});
+  $('checkoutPreview').addEventListener('dragstart',onDragStart);$('checkoutPreview').addEventListener('dragover',onDragOver);$('checkoutPreview').addEventListener('drop',onDrop);$('checkoutPreview').addEventListener('dragend',onDragEnd);
+  $('checkoutPreview').addEventListener('paste',event=>{if(event.target.closest('[contenteditable]')){event.preventDefault();document.execCommand('insertText',false,event.clipboardData.getData('text/plain'));}});
+  document.querySelectorAll('[data-format]').forEach(btn=>{btn.addEventListener('mousedown',event=>event.preventDefault());btn.addEventListener('click',()=>document.execCommand(btn.dataset.format,false,btn.dataset.value||null));});
+  $('clearFormat').addEventListener('mousedown',event=>event.preventDefault());$('clearFormat').addEventListener('click',()=>document.execCommand('removeFormat',false,null));
+  $('copyCheckout').addEventListener('click',copyCheckout);$('copyBottom').addEventListener('click',copyCheckout);
+  $('connectBtn').addEventListener('click',()=>{openModal('connectDialog');$('tokenInput').value=state.token;});
+  $('connectForm').addEventListener('submit',async event=>{event.preventDefault();const token=$('tokenInput').value.trim();if(!token){$('connectionMessage').textContent='Enter a fine-grained token to connect.';return;}
+    state.token=token;try{await githubRequest(`https://api.github.com/repos/${REPOSITORY}`);sessionStorage.setItem(TOKEN_KEY,token);$('connectionMessage').textContent='Connected. Your token is available only in this tab session.';closeModal('connectDialog');state.networkError='';refreshSyncStatus();toast('Connected to GitHub.');if(state.dirty)syncNow();}catch(err){state.token='';$('connectionMessage').textContent=`Could not connect: ${err.message}`;}
+  });
+  $('disconnectBtn').addEventListener('click',()=>{state.token='';sessionStorage.removeItem(TOKEN_KEY);$('tokenInput').value='';$('connectionMessage').textContent='Token forgotten for this browser session.';refreshSyncStatus();toast('Token removed from this session.');});
+  $('saveBtn').addEventListener('click',syncNow);
+  $('backupBtn').addEventListener('click',()=>openModal('backupDialog'));
+  $('exportJson').addEventListener('click',()=>download(`LabLibrary_backup_${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(state.db,null,2),'application/json'));
+  $('exportCsv').addEventListener('click',()=>download(`LabLibrary_${new Date().toISOString().slice(0,10)}.csv`,toCsv(state.db),'text/csv;charset=utf-8'));
+  $('importFile').addEventListener('change',event=>{if(event.target.files[0])importFile(event.target.files[0]);event.target.value='';});
+  window.addEventListener('online',()=>{if(state.dirty&&state.token)syncNow();});
+}
+
+$('todayText').textContent=new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',year:'numeric'}).format(new Date());
+registerEvents();initData();

@@ -16,22 +16,260 @@
     "Enzyme",
     "Protein / Cytokine",
     "Transfection reagent",
-    "Other chemical"
+    "Other chemical",
+    "Drug"
   ],
   "columns": [
-    {"id":"cloneName","label":"Clone name"},
-    {"id":"host","label":"Host"},
-    {"id":"stockConcentration","label":"Stock concentration"},
-    {"id":"workingConcentration","label":"Working concentration"},
-    {"id":"catalogNumber","label":"Cat #"},
-    {"id":"lotNumber","label":"Lot #"},
-    {"id":"cellLineCode","label":"Cell line code"},
-    {"id":"origin","label":"Origin"},
-    {"id":"vendor","label":"Vendor"},
-    {"id":"source","label":"Source"},
-    {"id":"storage","label":"Storage"},
-    {"id":"notes","label":"Notes"}
+    {
+      "id": "cloneName",
+      "label": "Clone name"
+    },
+    {
+      "id": "host",
+      "label": "Host"
+    },
+    {
+      "id": "stockConcentration",
+      "label": "Stock concentration"
+    },
+    {
+      "id": "workingConcentration",
+      "label": "Working concentration"
+    },
+    {
+      "id": "catalogNumber",
+      "label": "Cat #"
+    },
+    {
+      "id": "lotNumber",
+      "label": "Lot #"
+    },
+    {
+      "id": "cellLineCode",
+      "label": "Cell line code"
+    },
+    {
+      "id": "origin",
+      "label": "Origin"
+    },
+    {
+      "id": "vendor",
+      "label": "Vendor"
+    },
+    {
+      "id": "source",
+      "label": "Source"
+    },
+    {
+      "id": "storage",
+      "label": "Storage"
+    },
+    {
+      "id": "notes",
+      "label": "Notes"
+    },
+    {
+      "id": "media",
+      "label": "Media"
+    },
+    {
+      "id": "incubator",
+      "label": "Incubator"
+    },
+    {
+      "id": "cellDensity",
+      "label": "Cell density"
+    },
+    {
+      "id": "dishSize",
+      "label": "Size of dish"
+    }
   ],
-  "items": [],
-  "preferences": {"excludedColumns":{},"categoryOrder":[],"itemOrder":{}}
+  "items": [
+    {
+      "id": "initial-20261022-01",
+      "name": "Alexa 647 Goat Anti-Rabbit",
+      "category": "2° antibody",
+      "values": {
+        "host": "Goat",
+        "workingConcentration": "1:500",
+        "vendor": "Thermo"
+      },
+      "enteredAt": "2026-10-23T04:58:40.000Z",
+      "updatedAt": "2026-10-23T04:58:40.000Z"
+    },
+    {
+      "id": "initial-20261022-02",
+      "name": "Alexa 546 Goat Anti-Rabbit",
+      "category": "2° antibody",
+      "values": {
+        "host": "Goat",
+        "workingConcentration": "1:500",
+        "vendor": "Thermo"
+      },
+      "enteredAt": "2026-10-23T04:58:41.000Z",
+      "updatedAt": "2026-10-23T04:58:41.000Z"
+    },
+    {
+      "id": "initial-20261022-03",
+      "name": "CellTiter-Glo Reagent",
+      "category": "Assay reagent",
+      "values": {
+        "catalogNumber": "G7570",
+        "vendor": "Promega"
+      },
+      "enteredAt": "2026-10-23T04:58:42.000Z",
+      "updatedAt": "2026-10-23T04:58:42.000Z"
+    },
+    {
+      "id": "initial-20261022-04",
+      "name": "C11 BODIPY",
+      "category": "Fluorescent probe",
+      "values": {
+        "vendor": "Thermo",
+        "storage": "Yaqin's box, -80 freezer"
+      },
+      "enteredAt": "2026-10-23T04:58:43.000Z",
+      "updatedAt": "2026-10-23T04:58:43.000Z"
+    },
+    {
+      "id": "initial-20261022-05",
+      "name": "Phalloidin Plus 405",
+      "category": "Fluorescent probe",
+      "values": {
+        "vendor": "Thermo"
+      },
+      "enteredAt": "2026-10-23T04:58:44.000Z",
+      "updatedAt": "2026-10-23T04:58:44.000Z"
+    },
+    {
+      "id": "initial-20261022-06",
+      "name": "Phalloidin 488",
+      "category": "Fluorescent probe",
+      "values": {
+        "vendor": "Thermo"
+      },
+      "enteredAt": "2026-10-23T04:58:45.000Z",
+      "updatedAt": "2026-10-23T04:58:45.000Z"
+    },
+    {
+      "id": "initial-20261022-07",
+      "name": "SO3 PRDX3",
+      "category": "1° antibody",
+      "values": {
+        "cloneName": "5H7c",
+        "host": "Rabbit",
+        "stockConcentration": "1.7 mg/mL",
+        "workingConcentration": "1:100",
+        "lotNumber": "10",
+        "source": "Department",
+        "storage": "Vu's box, -20 freezer"
+      },
+      "enteredAt": "2026-10-23T04:58:46.000Z",
+      "updatedAt": "2026-10-23T04:58:46.000Z"
+    },
+    {
+      "id": "initial-20261022-08",
+      "name": "A549",
+      "category": "Cell line",
+      "values": {
+        "cellLineCode": "CCL-185 (WT)",
+        "origin": "Human alveolar basal epithelial carcinoma",
+        "source": "Department"
+      },
+      "enteredAt": "2026-10-23T04:58:47.000Z",
+      "updatedAt": "2026-10-23T04:58:47.000Z"
+    },
+    {
+      "id": "initial-20261022-09",
+      "name": "A549",
+      "category": "Cell line",
+      "values": {
+        "cellLineCode": "TR 5023 (GPX4/UBDX8 DKO)",
+        "origin": "Human alveolar basal epithelial carcinoma",
+        "source": "Department"
+      },
+      "enteredAt": "2026-10-23T04:58:48.000Z",
+      "updatedAt": "2026-10-23T04:58:48.000Z"
+    },
+    {
+      "id": "initial-20261022-10",
+      "name": "SV589",
+      "category": "Cell line",
+      "values": {
+        "media": "DMEM-Low glucose, 5% FCS, P/S",
+        "incubator": "5% CO2, 37℃",
+        "cellDensity": "30k",
+        "dishSize": "24-well",
+        "source": "Department"
+      },
+      "enteredAt": "2026-10-23T04:58:49.000Z",
+      "updatedAt": "2026-10-23T04:58:49.000Z"
+    },
+    {
+      "id": "initial-20261022-11",
+      "name": "HSC-T6",
+      "category": "Cell line",
+      "values": {
+        "origin": "Rat hepatic stellate cell",
+        "source": "Department"
+      },
+      "enteredAt": "2026-10-23T04:58:50.000Z",
+      "updatedAt": "2026-10-23T04:58:50.000Z"
+    },
+    {
+      "id": "initial-20261022-12",
+      "name": "Huh7",
+      "category": "Cell line",
+      "values": {
+        "media": "DMEM-High glucose, 5% FCS, P/S",
+        "incubator": "5% CO2, 37℃",
+        "cellDensity": "30k",
+        "dishSize": "96-well",
+        "origin": "Human hepatocellular carcinoma",
+        "source": "Department"
+      },
+      "enteredAt": "2026-10-23T04:58:51.000Z",
+      "updatedAt": "2026-10-23T04:58:51.000Z"
+    },
+    {
+      "id": "initial-20261022-13",
+      "name": "Arachidonic Acid",
+      "category": "Drug",
+      "values": {
+        "source": "From Yanchao",
+        "storage": "Vu's box, -20 freezer"
+      },
+      "enteredAt": "2026-10-23T04:58:52.000Z",
+      "updatedAt": "2026-10-23T04:58:52.000Z"
+    },
+    {
+      "id": "initial-20261022-14",
+      "name": "Erastin 2",
+      "category": "Drug",
+      "values": {
+        "source": "From Yanchao"
+      },
+      "enteredAt": "2026-10-23T04:58:53.000Z",
+      "updatedAt": "2026-10-23T04:58:53.000Z"
+    },
+    {
+      "id": "initial-20261022-15",
+      "name": "Paraformaldehyde",
+      "category": "Fixative",
+      "values": {
+        "stockConcentration": "32%",
+        "workingConcentration": "4%",
+        "catalogNumber": "15714",
+        "vendor": "Electron microscopy sciences"
+      },
+      "enteredAt": "2026-10-23T04:58:54.000Z",
+      "updatedAt": "2026-10-23T04:58:54.000Z"
+    }
+  ],
+  "preferences": {
+    "excludedColumns": {},
+    "categoryOrder": [],
+    "itemOrder": {}
+  }
 }

@@ -8,7 +8,9 @@ A browser-based research inventory and experiment checkout at **https://vubio.gi
 - Category-aware field ordering and suggestions from previous items.
 - Click-to-edit table cells, custom fields, versioning by case-insensitive item name, and collapsed histories.
 - Experiment checkout defaults to the newest version, with a picker for earlier versions.
-- Category-grouped lab-note tables, per-category remembered column choices, drag-to-order rows/tables, and rich-text clipboard formatting.
+- Save named draft experiment checkouts in the GitHub JSON database, reopen/update/delete them, and clear the current checkout without deleting saved plans.
+- Filter checkout items instantly using category chips or the same category sidebar as the library.
+- Category-grouped lab-note tables, per-category remembered column choices, drag-to-order rows/tables, and smaller (9 pt) rich-text clipboard tables for OneNote.
 - CSV/TSV import, CSV export, and complete JSON backups.
 - GitHub API persistence for cross-device use, with browser-local drafts and safe detection of simultaneous conflicting edits.
 
@@ -21,11 +23,11 @@ A browser-based research inventory and experiment checkout at **https://vubio.gi
 
 ### Direct GitHub database
 
-All data is saved in `data/library.json` on the `main` branch. The browser reads the latest file directly from the GitHub API; it does **not** use a third-party database. The repository is public, so **all records committed here are public**, including notes and storage locations. Never store secrets, patient data, confidential protocols, or unpublished sensitive work in it.
+All inventory records, category preferences, and saved experiment checkout plans are saved in `data/library.json` on the `main` branch. The browser reads the latest file directly from the GitHub API; it does **not** use a third-party database. The repository is public, so **all records committed here are public**, including notes and storage locations. Never store secrets, patient data, confidential protocols, or unpublished sensitive work in it.
 
-To enable saving, open **GitHub sync settings** inside the app and enter a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new) with access only to `vubio/Lablibrary` and **Contents: Read and write**. Tokens are retained in *sessionStorage* for the current browser tab session, never committed to GitHub. Do not place them in source code or database fields.
+The website and committed library records are readable from any computer with internet access. **Edits made without GitHub connection are only saved to that browser**, not published to the shared repository. To enable cross-device saving, open **GitHub sync settings** inside the app and enter a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new) with access only to `vubio/Lablibrary` and **Contents: Read and write**. Tokens are retained in *sessionStorage* for the current browser tab session, never committed to GitHub. Do not place them in source code or database fields.
 
-Edits are immediately backed up in this browser and uploaded after a short debounce. Simultaneous non-overlapping edits can merge. Conflicting edits to the same row are stopped so nothing is silently overwritten; export a JSON backup and reconcile them before continuing.
+Edits are immediately backed up in this browser and uploaded after a short debounce when authenticated. A GitHub write token must be supplied separately on each computer/browser session where edits will be made. Saved checkouts preserve selected inventory versions, category and row ordering, and visible-column choices; temporary preview cell edits and rich-text formatting are not preserved when reopening a saved plan. Simultaneous non-overlapping edits can merge. Conflicting edits to the same row are stopped so nothing is silently overwritten; export a JSON backup and reconcile them before continuing.
 
 ## Development
 

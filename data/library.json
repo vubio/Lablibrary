@@ -267,9 +267,32 @@
       "updatedAt": "2026-10-23T04:58:54.000Z"
     }
   ],
+  "checkouts": [],
   "preferences": {
-    "excludedColumns": {},
-    "categoryOrder": [],
-    "itemOrder": {}
+    "excludedColumns": {
+      "Cell line": [
+        "enteredAt"
+      ],
+      "1° antibody": [
+        "enteredAt"
+      ],
+      "Drug": [
+        "enteredAt"
+      ]
+    },
+    "categoryOrder": [
+      "1° antibody",
+      "Assay reagent",
+      "Cell line",
+      "Fixative",
+      "Drug",
+      "Fluorescent probe"
+    ],
+    "itemOrder": {
+      "Fluorescent probe": [
+        "initial-20261022-04",
+        "initial-20261022-06"
+      ]
+    }
   }
 }

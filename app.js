@@ -108,7 +108,60 @@ function renderCheckout(){
   }).join('');
 }
 
-function showPage(page){state.currentPage=page;$('libraryScreen').classList.toggle('hidden',page!=='library');$('checkoutScreen').classList.toggle('hidden',page!=='checkout');$('navLibrary').classList.toggle('active',page==='library');$('navCheckout').classList.toggle('active',page==='checkout');$('currentPage').textContent=page==='library'?'LIBRARY':'EXPERIMENT CHECKOUT';if(page==='checkout')renderCheckout();}
+function defaultPlanName(){return 'Experiment — '+new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',year:'numeric'}).format(new Date());}
+function renderSavedPlans(){
+  const plans=[...state.db.checkouts].sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0));
+  $('savedCount').textContent=plans.length;
+  $('saveCheckoutPlan').disabled=!state.selected.size;
+  $('clearEverything').disabled=!state.selected.size&&!state.activeCheckoutId;
+  $('savedPlanList').innerHTML=plans.length?plans.map(plan=>{
+    const valid=plan.selectedIds.filter(id=>state.db.items.some(item=>item.id===id)).length;
+    return `<div class="saved-plan ${state.activeCheckoutId===plan.id?'open':''}">
+      <div class="saved-plan-info"><strong>${esc(plan.name)}</strong><span>${valid} item${valid===1?'':'s'} · Saved ${esc(formatTime(plan.updatedAt))}</span></div>
+      <button class="button subtle small" data-open-plan="${esc(plan.id)}" type="button">${state.activeCheckoutId===plan.id?'Reload':'Open'}</button>
+      <button class="saved-plan-delete" data-delete-plan="${esc(plan.id)}" title="Delete saved plan" type="button" aria-label="Delete ${esc(plan.name)}">✕</button>
+    </div>`;
+  }).join(''):'<span class="saved-empty">No saved experiments yet. Select materials and click Save checkout.</span>';
+}
+function saveCheckoutPlan(){
+  const selected=selectedItems();
+  if(!selected.length){toast('Select some materials before saving this experiment.',true);return;}
+  const name=$('planName').value.trim()||defaultPlanName();
+  const preference=checkoutPreferences(),timestamp=new Date().toISOString();
+  let saved=state.db.checkouts.find(c=>c.id===state.activeCheckoutId);
+  const content={name,selectedIds:selected.map(item=>item.id),categoryOrder:[...preference.categoryOrder],
+    itemOrder:structuredClone(preference.itemOrder),excludedColumns:structuredClone(preference.excludedColumns),updatedAt:timestamp};
+  if(saved)Object.assign(saved,content);
+  else{saved={id:makeId(),createdAt:timestamp,...content};state.db.checkouts.push(saved);}
+  state.activeCheckoutId=saved.id;$('planName').value=name;changed();
+  toast(state.token?'Experiment saved; GitHub sync queued.':'Experiment saved on this device. Connect GitHub to share it.');
+}
+function clearEverything(){
+  state.selected.clear();state.checkoutExpanded.clear();state.checkoutCategory='';
+  state.checkoutPrefs=null;state.activeCheckoutId=null;
+  $('checkoutSearch').value='';$('planName').value=defaultPlanName();
+  render();toast('Checkout cleared. Saved experiments remain available.');
+}
+function loadCheckoutPlan(id){
+  const plan=state.db.checkouts.find(c=>c.id===id);if(!plan)return;
+  state.selected=new Map();
+  for(const id of plan.selectedIds){const item=itemById(id);if(item)state.selected.set(keyFor(item.name),id);}
+  state.checkoutExpanded=new Set(state.selected.keys());
+  state.checkoutPrefs={categoryOrder:[...plan.categoryOrder],itemOrder:structuredClone(plan.itemOrder),
+    excludedColumns:structuredClone(plan.excludedColumns)};
+  state.checkoutCategory='';state.activeCheckoutId=id;
+  $('checkoutSearch').value='';$('planName').value=plan.name;render();
+  toast('Saved checkout loaded. Modify it and click Save checkout to update.');
+}
+function deleteCheckoutPlan(id){
+  const plan=state.db.checkouts.find(c=>c.id===id);if(!plan)return;
+  if(!window.confirm(`Delete saved checkout “${plan.name}”? Your original library items will not be deleted.`))return;
+  state.db.checkouts=state.db.checkouts.filter(c=>c.id!==id);
+  if(state.activeCheckoutId===id)state.activeCheckoutId=null;
+  changed();toast('Saved checkout deleted; library items kept.');
+}
+
+function showPage(page){state.currentPage=page;$('libraryScreen').classList.toggle('hidden',page!=='library');$('checkoutScreen').classList.toggle('hidden',page!=='checkout');$('navLibrary').classList.toggle('active',page==='library');$('navCheckout').classList.toggle('active',page==='checkout');$('currentPage').textContent=page==='library'?'LIBRARY':'EXPERIMENT CHECKOUT';if(page==='checkout'){renderCheckout();renderSavedPlans();}renderCategories();}
 function openModal(id){$(id).showModal();}
 function closeModal(id){$(id).close();}
 function itemById(id){return state.db.items.find(x=>x.id===id);}
@@ -155,7 +208,7 @@ function inlineEdit(el){
   input.addEventListener('blur',()=>finish(true),{once:true});input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();finish(true);}if(event.key==='Escape'){event.preventDefault();finish(false);}});
 }
 
-function setSelection(key,itemId){if(itemId){state.selected.set(key,itemId);state.checkoutExpanded.add(key);}else state.selected.delete(key);renderStats();renderPicker();renderCheckout();}
+function setSelection(key,itemId){if(itemId){state.selected.set(key,itemId);state.checkoutExpanded.add(key);}else state.selected.delete(key);renderStats();renderPicker();renderCheckout();renderSavedPlans();}
 function applyColumnChoice(category,id,checked){
   const set=new Set(checkoutPreferences().excludedColumns[category]||[]);
   if(checked)set.delete(id);else set.add(id);
@@ -261,6 +314,7 @@ async function importFile(file){
       const imported=normalizeDatabase(source);for(const cat of imported.categories)if(!state.db.categories.includes(cat))state.db.categories.push(cat);
       for(const col of imported.columns)if(!state.db.columns.some(c=>c.id===col.id))state.db.columns.push(col);
       const ids=new Set(state.db.items.map(it=>it.id));for(const item of imported.items)if(!ids.has(item.id)){state.db.items.push(item);ids.add(item.id);total++;}
+      const checkoutIds=new Set(state.db.checkouts.map(it=>it.id));for(const plan of imported.checkouts)if(!checkoutIds.has(plan.id)){state.db.checkouts.push(plan);checkoutIds.add(plan.id);total++;}
     }else total=importRows(state.db,text,file.name.toLowerCase().endsWith('.tsv')?'\t':',');
     if(total){changed();$('importMessage').textContent=`Successfully added ${total} item rows. Sync to GitHub when ready.`;toast(`${total} records imported.`);}else $('importMessage').textContent='No new records to add.';
   }catch(err){$('importMessage').textContent=`Import failed: ${err.message}`;toast(err.message,true);}
@@ -272,8 +326,16 @@ function registerEvents(){
   $('addItemBtn').addEventListener('click',()=>openItemDialog());$('emptyAdd').addEventListener('click',()=>openItemDialog());
   $('addCategoryBtn').addEventListener('click',()=>{openItemDialog();$('itemCategory').focus();});
   $('librarySearch').addEventListener('input',renderLibrary);$('checkoutSearch').addEventListener('input',renderPicker);
-  $('libraryCategory').addEventListener('change',()=>{renderCategories();renderLibrary();});$('checkoutCategory').addEventListener('change',renderPicker);
-  $('categoryNav').addEventListener('click',event=>{const btn=event.target.closest('[data-filter-category]');if(btn){showPage('library');$('libraryCategory').value=btn.dataset.filterCategory;renderCategories();renderLibrary();}});
+  $('libraryCategory').addEventListener('change',()=>{renderCategories();renderLibrary();});
+  $('checkoutCategoryChips').addEventListener('click',event=>{
+    const btn=event.target.closest('[data-quick-category]');if(!btn)return;
+    state.checkoutCategory=btn.dataset.quickCategory;renderPicker();renderCategories();
+  });
+  $('categoryNav').addEventListener('click',event=>{
+    const btn=event.target.closest('[data-filter-category]');if(!btn)return;
+    if(state.currentPage==='checkout'){state.checkoutCategory=btn.dataset.filterCategory;renderPicker();renderCategories();}
+    else{$('libraryCategory').value=btn.dataset.filterCategory;renderCategories();renderLibrary();}
+  });
   $('libraryTable').addEventListener('click',event=>{
     const toggle=event.target.closest('[data-expand]');if(toggle){const key=toggle.dataset.expand;if(state.expanded.has(key))state.expanded.delete(key);else state.expanded.add(key);renderLibrary();return;}
     const version=event.target.closest('[data-copy-version]');if(version){openItemDialog(itemById(version.dataset.copyVersion),true);return;}
@@ -292,16 +354,26 @@ function registerEvents(){
     if(event.target.matches('[data-choose-version]'))setSelection(event.target.dataset.chooseVersion,event.target.value);
   });
   $('pickerList').addEventListener('click',event=>{const button=event.target.closest('[data-toggle-picker]');if(button){const key=button.dataset.togglePicker;if(state.checkoutExpanded.has(key))state.checkoutExpanded.delete(key);else state.checkoutExpanded.add(key);renderPicker();}});
-  $('clearSelection').addEventListener('click',()=>{state.selected.clear();renderStats();renderPicker();renderCheckout();});
+  $('clearSelection').addEventListener('click',clearEverything);
+  $('clearEverything').addEventListener('click',clearEverything);
+  $('saveCheckoutPlan').addEventListener('click',saveCheckoutPlan);
+  $('savedPlanList').addEventListener('click',event=>{
+    const open=event.target.closest('[data-open-plan]');
+    if(open){loadCheckoutPlan(open.dataset.openPlan);return;}
+    const remove=event.target.closest('[data-delete-plan]');
+    if(remove)deleteCheckoutPlan(remove.dataset.deletePlan);
+  });
   $('checkoutPreview').addEventListener('change',event=>{if(event.target.matches('[data-column-id]'))applyColumnChoice(event.target.dataset.columnCategory,event.target.dataset.columnId,event.target.checked);});
   $('checkoutPreview').addEventListener('dragstart',onDragStart);$('checkoutPreview').addEventListener('dragover',onDragOver);$('checkoutPreview').addEventListener('drop',onDrop);$('checkoutPreview').addEventListener('dragend',onDragEnd);
   $('checkoutPreview').addEventListener('paste',event=>{if(event.target.closest('[contenteditable]')){event.preventDefault();document.execCommand('insertText',false,event.clipboardData.getData('text/plain'));}});
   document.querySelectorAll('[data-format]').forEach(btn=>{btn.addEventListener('mousedown',event=>event.preventDefault());btn.addEventListener('click',()=>document.execCommand(btn.dataset.format,false,btn.dataset.value||null));});
   $('clearFormat').addEventListener('mousedown',event=>event.preventDefault());$('clearFormat').addEventListener('click',()=>document.execCommand('removeFormat',false,null));
   $('copyCheckout').addEventListener('click',copyCheckout);$('copyBottom').addEventListener('click',copyCheckout);
-  $('connectBtn').addEventListener('click',()=>{openModal('connectDialog');$('tokenInput').value=state.token;});
+  const openGithubConnection=()=>{openModal('connectDialog');$('tokenInput').value=state.token;};
+  $('connectBtn').addEventListener('click',openGithubConnection);
+  $('syncGuideConnect').addEventListener('click',openGithubConnection);
   $('connectForm').addEventListener('submit',async event=>{event.preventDefault();const token=$('tokenInput').value.trim();if(!token){$('connectionMessage').textContent='Enter a fine-grained token to connect.';return;}
-    state.token=token;try{await githubRequest(`https://api.github.com/repos/${REPOSITORY}`);sessionStorage.setItem(TOKEN_KEY,token);$('connectionMessage').textContent='Connected. Your token is available only in this tab session.';closeModal('connectDialog');state.networkError='';refreshSyncStatus();toast('Connected to GitHub.');if(state.dirty)syncNow();}catch(err){state.token='';$('connectionMessage').textContent=`Could not connect: ${err.message}`;}
+    state.token=token;try{await githubRequest(`https://api.github.com/repos/${REPOSITORY}`);sessionStorage.setItem(TOKEN_KEY,token);$('connectionMessage').textContent='Connected. Your token is available only in this tab session.';closeModal('connectDialog');state.networkError='';refreshSyncStatus();toast('GitHub token accepted for reading. Upload access will be checked on save.');if(state.dirty)syncNow();}catch(err){state.token='';$('connectionMessage').textContent=`Could not connect: ${err.message}`;}
   });
   $('disconnectBtn').addEventListener('click',()=>{state.token='';sessionStorage.removeItem(TOKEN_KEY);$('tokenInput').value='';$('connectionMessage').textContent='Token forgotten for this browser session.';refreshSyncStatus();toast('Token removed from this session.');});
   $('saveBtn').addEventListener('click',syncNow);
@@ -313,4 +385,5 @@ function registerEvents(){
 }
 
 $('todayText').textContent=new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',year:'numeric'}).format(new Date());
+$('planName').value=defaultPlanName();
 registerEvents();initData();

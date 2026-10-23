@@ -34,3 +34,30 @@ test('stops overlapping concurrent edits',()=>{
   const remote=normalizeDatabase(base);remote.items[0].name='A updated elsewhere';
   assert.equal(mergeDatabases(base,local,remote).conflicts.length,1);
 });
+
+
+test('saved checkouts survive JSON normalization and preserve selected material versions',()=>{
+  const db=emptyDatabase();db.checkouts.push({
+    id:'plan-1',name:'Ferroptosis imaging',selectedIds:['a','b'],
+    categoryOrder:['Drug','Cell line'],itemOrder:{Drug:['b']},
+    excludedColumns:{Drug:['vendor']},
+    createdAt:'2026-10-22T16:00:00Z',updatedAt:'2026-10-22T16:00:00Z'
+  });
+  const roundTrip=normalizeDatabase(JSON.parse(JSON.stringify(db)));
+  assert.equal(roundTrip.checkouts.length,1);
+  assert.deepEqual(roundTrip.checkouts[0].selectedIds,['a','b']);
+  assert.deepEqual(roundTrip.checkouts[0].excludedColumns.Drug,['vendor']);
+});
+
+test('concurrent edits to different saved checkouts merge; same checkout conflict is detected',()=>{
+  const baseline=emptyDatabase();const local=normalizeDatabase(baseline),remote=normalizeDatabase(baseline);
+  const plan=id=>({id,name:id,selectedIds:['a'],categoryOrder:[],itemOrder:{},
+    excludedColumns:{},createdAt:'2026-10-22T16:00:00Z',updatedAt:'2026-10-22T16:00:00Z'});
+  local.checkouts.push(plan('one'));remote.checkouts.push(plan('two'));
+  const merged=mergeDatabases(baseline,local,remote);
+  assert.deepEqual(merged.conflicts,[]);
+  assert.deepEqual(merged.database.checkouts.map(x=>x.id).sort(),['one','two']);
+  const a=normalizeDatabase(merged.database),b=normalizeDatabase(merged.database);
+  a.checkouts[0].name='Edited on work PC';b.checkouts[0].name='Edited on lab PC';
+  assert.equal(mergeDatabases(merged.database,a,b).conflicts.length,1);
+});

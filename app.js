@@ -8,7 +8,7 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const LOCAL_KEY='vubio-lablibrary-local-v1',TOKEN_KEY='vubio-lablibrary-token-session';
 const API=`https://api.github.com/repos/${REPOSITORY}/contents/${DATA_PATH}`;
-const state={db:emptyDatabase(),baseDb:emptyDatabase(),baseSha:null,dirty:false,revision:0,token:sessionStorage.getItem(TOKEN_KEY)||'',busy:false,networkError:'',currentPage:'library',selected:new Map(),expanded:new Set(),checkoutExpanded:new Set(),editingId:null,cloning:false,fieldDraft:{},syncTimer:null,toastTimer:null};
+const state={db:emptyDatabase(),baseDb:emptyDatabase(),baseSha:null,dirty:false,revision:0,token:sessionStorage.getItem(TOKEN_KEY)||'',busy:false,networkError:'',currentPage:'library',selected:new Map(),expanded:new Set(),checkoutExpanded:new Set(),checkoutCategory:'',activeCheckoutId:null,checkoutPrefs:null,editingId:null,cloning:false,fieldDraft:{},syncTimer:null,toastTimer:null};
 
 function toast(message,error=false){const el=$('toast');el.textContent=message;el.classList.toggle('error',error);el.classList.remove('hidden');clearTimeout(state.toastTimer);state.toastTimer=setTimeout(()=>el.classList.add('hidden'),3600);}
 function setNotice(message='',danger=false){$('notice').textContent=message;$('notice').classList.toggle('hidden',!message);$('notice').classList.toggle('danger',danger);}
@@ -18,27 +18,49 @@ function changed(){state.dirty=true;state.revision++;persistLocal();render();ref
 function refreshSyncStatus(){
   const dot=$('syncDot');dot.className='sync-dot';
   let label,detail;
-  if(state.busy){label='Syncing…';detail='Saving to GitHub';}
-  else if(state.networkError){label='Sync needs attention';detail='Your local edits are preserved';dot.classList.add('error');}
-  else if(state.dirty){label=state.token?'Changes pending':'Saved on this device';detail=state.token?'GitHub sync is queued':'Connect GitHub for cross-device sync';}
-  else {label='GitHub up to date';detail=state.token?'Connected • autosync on':'View access • connect to edit';dot.classList.add('ok');}
+  if(state.busy){label='Syncing with GitHub…';detail='Uploading shared records';}
+  else if(state.networkError){label='GitHub sync needs attention';detail='Your unsynced edits remain on this device';dot.classList.add('error');}
+  else if(state.dirty){label=state.token?'Changes waiting to upload':'Local changes only';detail=state.token?'GitHub sync is queued':'Not yet available on other computers';}
+  else if(state.token){label='GitHub synchronized';detail='Shared records available on other computers';dot.classList.add('ok');}
+  else{label='Viewing GitHub library';detail='Shared data loads anywhere • connect to publish edits';dot.classList.add('ok');}
   $('syncLabel').textContent=label;$('syncDetail').textContent=detail;
-  $('saveBtn').textContent=state.busy?'↻ Saving…':state.dirty?'↻ Save changes':'↻ Sync now';$('saveBtn').disabled=state.busy;
+  $('saveBtn').textContent=state.busy?'↻ Saving…':state.dirty?'↻ Upload changes':'↻ Sync with GitHub';$('saveBtn').disabled=state.busy;
+  $('syncGuide').classList.toggle('hidden',!!state.token);
+  $('syncGuideText').textContent=state.dirty
+    ? 'These changes are saved only in this browser. Connect GitHub to make them accessible on your lab PC.'
+    : 'The library loads from GitHub anywhere. To save new items or experiment plans across computers, connect GitHub.';
 }
+
 function safeCategories(){return [...new Set([...state.db.categories,...state.db.items.map(x=>x.category)])].filter(Boolean);}
 function countCategories(){return new Set(state.db.items.map(x=>x.category)).size;}
 function allGroups(){return groupItems(state.db.items);}
 
-function render(){renderStats();renderCategories();renderLibrary();renderPicker();renderCheckout();refreshSyncStatus();}
+function render(){renderStats();renderCategories();renderLibrary();renderPicker();renderCheckout();renderSavedPlans();refreshSyncStatus();}
 function renderStats(){const groups=allGroups();$('statItems').textContent=groups.length;$('statCategories').textContent=countCategories();$('statVersions').textContent=Math.max(0,state.db.items.length-groups.length);$('libraryCount').textContent=groups.length;$('checkoutCount').textContent=state.selected.size;}
 function renderCategories(){
-  const categories=safeCategories(),counts=new Map();for(const g of allGroups())counts.set(g.latest.category,(counts.get(g.latest.category)||0)+1);
-  const active=$('libraryCategory').value;
-  $('categoryNav').innerHTML=categories.filter(c=>counts.get(c)).sort((a,b)=>a.localeCompare(b)).map(c=>`<button class="category-link ${active===c?'active':''}" data-filter-category="${esc(c)}"><span></span><span>${esc(c)}</span><small>${counts.get(c)}</small></button>`).join('');
-  for(const id of ['libraryCategory','checkoutCategory']){
-    const select=$(id),value=select.value;select.innerHTML='<option value="">All categories</option>'+categories.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');select.value=value;
-  }
+  const categories=safeCategories(),counts=new Map();
+  for(const g of allGroups())counts.set(g.latest.category,(counts.get(g.latest.category)||0)+1);
+  const active=state.currentPage==='checkout'?state.checkoutCategory:$('libraryCategory').value;
+  $('categoryNav').innerHTML=`<button class="category-link ${!active?'active':''}" data-filter-category=""><span></span><span>All materials</span><small>${allGroups().length}</small></button>`+
+    categories.filter(c=>counts.get(c)).sort((a,b)=>a.localeCompare(b)).map(c=>`<button class="category-link ${active===c?'active':''}" data-filter-category="${esc(c)}"><span></span><span>${esc(c)}</span><small>${counts.get(c)}</small></button>`).join('');
+  const select=$('libraryCategory'),value=select.value;
+  select.innerHTML='<option value="">All categories</option>'+categories.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  select.value=value;
 }
+function renderCheckoutCategories(){
+  const counts=new Map();
+  for(const g of allGroups())counts.set(g.latest.category,(counts.get(g.latest.category)||0)+1);
+  const categories=[...counts.keys()].sort((a,b)=>a.localeCompare(b));
+  $('checkoutCategoryChips').innerHTML=
+    `<button type="button" class="checkout-filter-chip ${state.checkoutCategory===''?'active':''}" data-quick-category="">All <span>${allGroups().length}</span></button>`+
+    categories.map(c=>`<button type="button" class="checkout-filter-chip ${state.checkoutCategory===c?'active':''}" data-quick-category="${esc(c)}">${esc(c)} <span>${counts.get(c)}</span></button>`).join('');
+}
+function checkoutPreferences(){return state.checkoutPrefs||state.db.preferences;}
+function ensureCheckoutPreferences(){
+  if(!state.checkoutPrefs)state.checkoutPrefs=structuredClone(state.db.preferences);
+  return state.checkoutPrefs;
+}
+
 function renderLibrary(){
   const term=$('librarySearch').value.trim().toLocaleLowerCase(),category=$('libraryCategory').value;
   const matches=allGroups().filter(g=>g.items.some(it=>(!category||it.category===category)&&(!term||[it.name,it.category,...Object.values(it.values||{})].some(x=>String(x).toLocaleLowerCase().includes(term)))));
@@ -62,7 +84,8 @@ function renderLibraryRow(item,cols,groupKey,isOld,expanded){
   }).join('')}<td><div class="row-actions"><button class="row-icon-btn" data-edit-item="${esc(item.id)}">Edit</button><button class="row-icon-btn" data-copy-version="${esc(item.id)}">＋ Version</button></div></td></tr>`;
 }
 function renderPicker(){
-  const term=$('checkoutSearch').value.trim().toLowerCase(),category=$('checkoutCategory').value;
+  const term=$('checkoutSearch').value.trim().toLowerCase(),category=state.checkoutCategory;
+  renderCheckoutCategories();
   const matches=allGroups().filter(g=>g.items.some(it=>(!category||it.category===category)&&(!term||[it.name,it.category,...Object.values(it.values||{})].some(v=>String(v).toLowerCase().includes(term)))));
   $('pickerList').innerHTML=matches.map(g=>{
     const selectedId=state.selected.get(g.key),checked=!!selectedId,hasOld=g.items.length>1,expanded=state.checkoutExpanded.has(g.key)||checked&&hasOld;
@@ -70,8 +93,8 @@ function renderPicker(){
   }).join('')||'<div class="empty-preview"><p>No matching items.</p></div>';
 }
 function selectedItems(){return [...state.selected.values()].map(id=>state.db.items.find(it=>it.id===id)).filter(Boolean);}
-function orderedCategories(categories){const preferred=state.db.preferences.categoryOrder;return [...categories].sort((a,b)=>{const ia=preferred.indexOf(a),ib=preferred.indexOf(b);return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b);});}
-function orderedItems(items,category){const preferred=state.db.preferences.itemOrder[category]||[];return [...items].sort((a,b)=>{const ia=preferred.indexOf(a.id),ib=preferred.indexOf(b.id);return (ia<0?999:ia)-(ib<0?999:ib)||a.name.localeCompare(b.name);});}
+function orderedCategories(categories){const preferred=checkoutPreferences().categoryOrder;return [...categories].sort((a,b)=>{const ia=preferred.indexOf(a),ib=preferred.indexOf(b);return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b);});}
+function orderedItems(items,category){const preferred=checkoutPreferences().itemOrder[category]||[];return [...items].sort((a,b)=>{const ia=preferred.indexOf(a.id),ib=preferred.indexOf(b.id);return (ia<0?999:ia)-(ib<0?999:ib)||a.name.localeCompare(b.name);});}
 function checkoutColumns(items){const cols=[AUTO_COLUMNS[0],...state.db.columns,AUTO_COLUMNS[2]];return cols.filter(c=>c.id==='name'||c.id==='enteredAt'||items.some(it=>String(displayValue(it,c.id)||'').trim()));}
 function renderCheckout(){
   const items=selectedItems(),byCategory=new Map();for(const it of items){if(!byCategory.has(it.category))byCategory.set(it.category,[]);byCategory.get(it.category).push(it);}
@@ -79,7 +102,7 @@ function renderCheckout(){
   $('copyCheckout').disabled=$('copyBottom').disabled=!items.length;
   if(!items.length){$('checkoutPreview').innerHTML='<div class="empty-preview"><span>☑</span><h3>Nothing selected yet</h3><p>Tick materials on the left to build your experiment record.</p></div>';return;}
   $('checkoutPreview').innerHTML=orderedCategories([...byCategory.keys()]).map(category=>{
-    const rows=orderedItems(byCategory.get(category),category),allCols=checkoutColumns(rows),excluded=state.db.preferences.excludedColumns[category]||[];
+    const rows=orderedItems(byCategory.get(category),category),allCols=checkoutColumns(rows),excluded=checkoutPreferences().excludedColumns[category]||[];
     const visible=allCols.filter(c=>!excluded.includes(c.id));
     return `<section class="checkout-card" data-category="${esc(category)}"><div class="checkout-card-head"><button class="drag-handle" draggable="true" data-drag-category="${esc(category)}" title="Drag to reorder tables">≡</button><span class="checkout-card-title">${esc(category)}</span><span class="checkout-card-subtitle">${rows.length} item${rows.length>1?'s':''}</span></div><div class="field-chips">${allCols.map(c=>`<label class="field-chip"><input type="checkbox" data-column-category="${esc(category)}" data-column-id="${esc(c.id)}" ${excluded.includes(c.id)?'':'checked'} />${esc(c.label)}</label>`).join('')}</div><div class="export-scroll"><table class="export-table"><thead><tr><th class="item-handle"></th>${visible.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead><tbody>${rows.map(it=>`<tr data-preview-row="${esc(it.id)}"><td class="item-handle"><button class="drag-handle" draggable="true" data-drag-item="${esc(it.id)}" data-drag-item-category="${esc(category)}" title="Drag to reorder items">≡</button></td>${visible.map(c=>`<td contenteditable="true" spellcheck="false" title="Edit only this checkout copy">${esc(displayValue(it,c.id))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`;
   }).join('');
@@ -134,9 +157,10 @@ function inlineEdit(el){
 
 function setSelection(key,itemId){if(itemId){state.selected.set(key,itemId);state.checkoutExpanded.add(key);}else state.selected.delete(key);renderStats();renderPicker();renderCheckout();}
 function applyColumnChoice(category,id,checked){
-  const set=new Set(state.db.preferences.excludedColumns[category]||[]);
+  const set=new Set(checkoutPreferences().excludedColumns[category]||[]);
   if(checked)set.delete(id);else set.add(id);
-  state.db.preferences.excludedColumns[category]=[...set];changed();
+  if(state.checkoutPrefs){state.checkoutPrefs.excludedColumns[category]=[...set];renderCheckout();}
+  else{state.db.preferences.excludedColumns[category]=[...set];changed();}
 }
 
 // Drag-and-drop order lives with category preferences, not on the underlying inventory rows.
@@ -151,11 +175,11 @@ function onDragOver(event){if(dragging&&event.target.closest('.checkout-card,[da
 function onDrop(event){if(!dragging)return;event.preventDefault();
   if(dragging.kind==='category'){
     const card=event.target.closest('.checkout-card');const target=card?.dataset.category;
-    if(target&&target!==dragging.id){const present=orderedCategories([...new Set(selectedItems().map(it=>it.category))]);const from=present.indexOf(dragging.id),to=present.indexOf(target);present.splice(from,1);present.splice(to,0,dragging.id);state.db.preferences.categoryOrder=present;changed();}
+    if(target&&target!==dragging.id){const present=orderedCategories([...new Set(selectedItems().map(it=>it.category))]);const from=present.indexOf(dragging.id),to=present.indexOf(target);present.splice(from,1);present.splice(to,0,dragging.id);if(state.checkoutPrefs){state.checkoutPrefs.categoryOrder=present;renderCheckout();}else{state.db.preferences.categoryOrder=present;changed();}}
   }else{
     const row=event.target.closest('[data-preview-row]');const target=row?.dataset.previewRow;
     const members=orderedItems(selectedItems().filter(it=>it.category===dragging.category),dragging.category).map(it=>it.id);
-    if(target&&members.includes(target)&&target!==dragging.id){members.splice(members.indexOf(dragging.id),1);members.splice(members.indexOf(target),0,dragging.id);state.db.preferences.itemOrder[dragging.category]=members;changed();}
+    if(target&&members.includes(target)&&target!==dragging.id){members.splice(members.indexOf(dragging.id),1);members.splice(members.indexOf(target),0,dragging.id);if(state.checkoutPrefs){state.checkoutPrefs.itemOrder[dragging.category]=members;renderCheckout();}else{state.db.preferences.itemOrder[dragging.category]=members;changed();}}
   }
   dragging=null;
 }
@@ -169,10 +193,10 @@ function cleanCheckoutHtml(){
     const htmlRows=[],plainRows=[];
     for(const tr of table.querySelectorAll('tbody tr')){
       const cells=[...tr.querySelectorAll('td')].slice(1);
-      htmlRows.push('<tr>'+cells.map(td=>`<td style="border:1px solid #c8d7cd;padding:7px 9px;vertical-align:top">${td.innerHTML}</td>`).join('')+'</tr>');
+      htmlRows.push('<tr>'+cells.map(td=>`<td style="border:1px solid #c8d7cd;padding:4px 6px;vertical-align:top">${td.innerHTML}</td>`).join('')+'</tr>');
       plainRows.push(cells.map(td=>td.innerText.replaceAll('\t',' ').replaceAll('\n',' ')).join('\t'));
     }
-    htmlParts.push(`<h3 style="font-family:Arial,sans-serif;color:#185d46;margin:16px 0 6px">${esc(category)}</h3><table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:11pt"><thead><tr>${columns.map(c=>`<th style="border:1px solid #c8d7cd;padding:7px 9px;background:#e9f3ec;text-align:left">${esc(c)}</th>`).join('')}</tr></thead><tbody>${htmlRows.join('')}</tbody></table>`);
+    htmlParts.push(`<h3 style="font-family:Arial,sans-serif;font-size:10pt;color:#185d46;margin:10px 0 4px">${esc(category)}</h3><table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:9pt"><thead><tr>${columns.map(c=>`<th style="border:1px solid #c8d7cd;padding:7px 9px;background:#e9f3ec;text-align:left">${esc(c)}</th>`).join('')}</tr></thead><tbody>${htmlRows.join('')}</tbody></table>`);
     plainParts.push([category,columns.join('\t'),...plainRows].join('\n'));
   }
   return {html:htmlParts.join('<p></p>'),plain:plainParts.join('\n\n')};

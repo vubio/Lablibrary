@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "categories": [
+    "1° antibody",
+    "2° antibody",
+    "Cell line",
+    "Fluorescent probe",
+    "Fluorescent stain",
+    "Assay reagent",
+    "Small molecule",
+    "Fatty acid / Lipid",
+    "Fixative",
+    "Buffer / Salt",
+    "Detergent",
+    "Cell culture reagent",
+    "Enzyme",
+    "Protein / Cytokine",
+    "Transfection reagent",
+    "Other chemical"
+  ],
+  "columns": [
+    {"id":"cloneName","label":"Clone name"},
+    {"id":"host","label":"Host"},
+    {"id":"stockConcentration","label":"Stock concentration"},
+    {"id":"workingConcentration","label":"Working concentration"},
+    {"id":"catalogNumber","label":"Cat #"},
+    {"id":"lotNumber","label":"Lot #"},
+    {"id":"cellLineCode","label":"Cell line code"},
+    {"id":"origin","label":"Origin"},
+    {"id":"vendor","label":"Vendor"},
+    {"id":"source","label":"Source"},
+    {"id":"storage","label":"Storage"},
+    {"id":"notes","label":"Notes"}
+  ],
+  "items": [],
+  "preferences": {"excludedColumns":{},"categoryOrder":[],"itemOrder":{}}
+}

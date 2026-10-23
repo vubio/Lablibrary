@@ -17,7 +17,7 @@ export const DEFAULT_COLUMNS = [
 ];
 export const AUTO_COLUMNS = [{id:'name',label:'Name'},{id:'category',label:'Category'},{id:'enteredAt',label:'Entry date and time'}];
 const now = () => new Date().toISOString();
-export function emptyDatabase(){return {schemaVersion:1,categories:[...DEFAULT_CATEGORIES],columns:DEFAULT_COLUMNS.map(c=>({...c})),items:[],preferences:{excludedColumns:{},categoryOrder:[],itemOrder:{}}};}
+export function emptyDatabase(){return {schemaVersion:1,categories:[...DEFAULT_CATEGORIES],columns:DEFAULT_COLUMNS.map(c=>({...c})),items:[],checkouts:[],preferences:{excludedColumns:{},categoryOrder:[],itemOrder:{}}};}
 export function normalizeDatabase(input){
   const seed=emptyDatabase();
   if(!input || typeof input!=='object')return seed;
@@ -28,6 +28,13 @@ export function normalizeDatabase(input){
     id:String(x.id||makeId()),name:String(x.name),category:String(x.category||'Uncategorized'),
     values:typeof x.values==='object'&&x.values!==null&&!Array.isArray(x.values)?{...x.values}:{},
     enteredAt:String(x.enteredAt||x.createdAt||now()),updatedAt:String(x.updatedAt||x.enteredAt||now())
+  }));
+  seed.checkouts=(Array.isArray(input.checkouts)?input.checkouts:[]).filter(c=>c&&typeof c.name==='string'&&c.id).map(c=>({
+    id:String(c.id),name:c.name.trim()||'Untitled experiment',selectedIds:Array.isArray(c.selectedIds)?c.selectedIds.map(String):[],
+    categoryOrder:Array.isArray(c.categoryOrder)?c.categoryOrder.map(String):[],
+    itemOrder:c.itemOrder&&typeof c.itemOrder==='object'&&!Array.isArray(c.itemOrder)?structuredClone(c.itemOrder):{},
+    excludedColumns:c.excludedColumns&&typeof c.excludedColumns==='object'&&!Array.isArray(c.excludedColumns)?structuredClone(c.excludedColumns):{},
+    createdAt:String(c.createdAt||now()),updatedAt:String(c.updatedAt||c.createdAt||now())
   }));
   const p=input.preferences||{};
   seed.preferences={excludedColumns:(p.excludedColumns&&typeof p.excludedColumns==='object'?p.excludedColumns:{}),categoryOrder:Array.isArray(p.categoryOrder)?p.categoryOrder:[],itemOrder:(p.itemOrder&&typeof p.itemOrder==='object'?p.itemOrder:{})};
@@ -70,6 +77,19 @@ export function mergeDatabases(base,local,remote){
     if(changedMine){if(mine)rm.set(id,mine);else rm.delete(id);}
   }
   out.items=[...rm.values()];
+  // Saved checkout plans are independently mergeable records so different experiments
+  // edited on different computers do not overwrite one another.
+  const bc=new Map(base.checkouts.map(c=>[c.id,c])),lc=new Map(local.checkouts.map(c=>[c.id,c])),rc=new Map(remote.checkouts.map(c=>[c.id,c]));
+  for(const id of new Set([...bc.keys(),...lc.keys(),...rc.keys()])){
+    const before=bc.get(id),mine=lc.get(id),theirs=rc.get(id);
+    const changedMine=JSON.stringify(mine)!==JSON.stringify(before);
+    const changedTheirs=JSON.stringify(theirs)!==JSON.stringify(before);
+    if(changedMine&&changedTheirs&&JSON.stringify(mine)!==JSON.stringify(theirs)){
+      conflicts.push('saved checkout: '+(mine?.name||theirs?.name||id));continue;
+    }
+    if(changedMine){if(mine)rc.set(id,mine);else rc.delete(id);}
+  }
+  out.checkouts=[...rc.values()];
   for(const part of ['excludedColumns','categoryOrder','itemOrder']){
     const before=base.preferences[part],mine=local.preferences[part],theirs=remote.preferences[part];
     if(part==='categoryOrder'){

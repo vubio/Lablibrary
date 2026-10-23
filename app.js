@@ -25,10 +25,14 @@ function refreshSyncStatus(){
   else{label='Viewing GitHub library';detail='Shared data loads anywhere • connect to publish edits';dot.classList.add('ok');}
   $('syncLabel').textContent=label;$('syncDetail').textContent=detail;
   $('saveBtn').textContent=state.busy?'↻ Saving…':state.dirty?'↻ Upload changes':'↻ Sync with GitHub';$('saveBtn').disabled=state.busy;
-  $('syncGuide').classList.toggle('hidden',!!state.token);
-  $('syncGuideText').textContent=state.dirty
+  const needsTokenHelp=!!state.networkError && /(?:GitHub 403|GitHub 401|token|permission|forbidden)/i.test(state.networkError);
+  $('syncGuide').classList.toggle('hidden',!!state.token&&!needsTokenHelp);
+  $('syncGuideText').textContent=needsTokenHelp
+    ? 'Your token was rejected. Check that it targets vubio/Lablibrary with Contents: Read and write, then replace it here. Local changes are preserved.'
+    : state.dirty
     ? 'These changes are saved only in this browser. Connect GitHub to make them accessible on your lab PC.'
     : 'The library loads from GitHub anywhere. To save new items or experiment plans across computers, connect GitHub.';
+  $('syncGuideConnect').textContent=needsTokenHelp?'Replace GitHub token →':'Enable GitHub saving →';
 }
 
 function safeCategories(){return [...new Set([...state.db.categories,...state.db.items.map(x=>x.category)])].filter(Boolean);}
@@ -291,7 +295,14 @@ async function syncNow(){
     if(state.revision===startRevision){state.db=upload;state.dirty=false;}
     persistLocal();render();toast('Library saved to GitHub.');
     if(state.dirty){state.syncTimer=setTimeout(()=>syncNow(),2000);}
-  }catch(err){state.networkError=err.message;setNotice(`${err.message} Your local draft is still stored in this browser.`,true);toast('GitHub sync failed; your changes are safe locally.',true);}
+  }catch(err){
+    const forbidden=/GitHub 403:.*(?:Resource not accessible by personal access token|Forbidden)/i.test(err.message);
+    state.networkError=forbidden
+      ? 'GitHub 403: This access token cannot write to vubio/Lablibrary. In your GitHub fine-grained token settings select Resource owner vubio, repository Lablibrary, and Contents: Read and write. Then replace the token under GitHub sync settings.'
+      : err.message;
+    setNotice(`${state.networkError} Your local draft is still stored in this browser. Do not clear browser data before syncing.`,true);
+    toast(forbidden?'GitHub token needs write permission. Local changes were preserved.':'GitHub sync failed; your changes are safe locally.',true);
+  }
   finally{state.busy=false;refreshSyncStatus();}
 }
 async function initData(){
@@ -373,7 +384,7 @@ function registerEvents(){
   $('connectBtn').addEventListener('click',openGithubConnection);
   $('syncGuideConnect').addEventListener('click',openGithubConnection);
   $('connectForm').addEventListener('submit',async event=>{event.preventDefault();const token=$('tokenInput').value.trim();if(!token){$('connectionMessage').textContent='Enter a fine-grained token to connect.';return;}
-    state.token=token;try{await githubRequest(`https://api.github.com/repos/${REPOSITORY}`);sessionStorage.setItem(TOKEN_KEY,token);$('connectionMessage').textContent='Connected. Your token is available only in this tab session.';closeModal('connectDialog');state.networkError='';refreshSyncStatus();toast('GitHub token accepted for reading. Upload access will be checked on save.');if(state.dirty)syncNow();}catch(err){state.token='';$('connectionMessage').textContent=`Could not connect: ${err.message}`;}
+    state.token=token;try{await githubRequest(`https://api.github.com/repos/${REPOSITORY}`);sessionStorage.setItem(TOKEN_KEY,token);$('connectionMessage').textContent='Connected. Your token is available only in this tab session.';closeModal('connectDialog');state.networkError='';refreshSyncStatus();toast('Token accepted for reading. Checking GitHub write access when saving.');if(state.dirty)syncNow();}catch(err){state.token='';$('connectionMessage').textContent=`Could not connect: ${err.message}`;}
   });
   $('disconnectBtn').addEventListener('click',()=>{state.token='';sessionStorage.removeItem(TOKEN_KEY);$('tokenInput').value='';$('connectionMessage').textContent='Token forgotten for this browser session.';refreshSyncStatus();toast('Token removed from this session.');});
   $('saveBtn').addEventListener('click',syncNow);

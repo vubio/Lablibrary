@@ -327,6 +327,20 @@
       },
       "enteredAt": "2026-10-26T13:54:57.357Z",
       "updatedAt": "2026-10-26T13:54:57.357Z"
+    },
+    {
+      "id": "3ccab826-0ac1-41e2-9db5-188ffbe80dd4",
+      "name": "ProLong Glass Antifade Mountant",
+      "category": "Other chemical",
+      "values": {
+        "catalogNumber": "P36980",
+        "lotNumber": "3361453",
+        "vendor": "Thermo Fisher",
+        "source": "From Yanchao",
+        "storage": "Vu's Box 1, 4° fridge"
+      },
+      "enteredAt": "2026-10-26T14:06:38.607Z",
+      "updatedAt": "2026-10-26T14:06:38.607Z"
     }
   ],
   "checkouts": [],

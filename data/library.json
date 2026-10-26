@@ -168,7 +168,7 @@
     },
     {
       "id": "initial-20261022-07",
-      "name": "SO3 PRDX3",
+      "name": "SO3 PRDX3 (native)",
       "category": "1° antibody",
       "values": {
         "cloneName": "5H7c",
@@ -180,7 +180,7 @@
         "storage": "Vu's box, -20 freezer"
       },
       "enteredAt": "2026-10-23T04:58:46.000Z",
-      "updatedAt": "2026-10-23T04:58:46.000Z"
+      "updatedAt": "2026-10-26T16:17:11.770Z"
     },
     {
       "id": "initial-20261022-08",

@@ -1,7 +1,7 @@
 import {
   REPOSITORY,DATA_PATH,DEFAULT_COLUMNS,AUTO_COLUMNS,emptyDatabase,normalizeDatabase,
   makeId,keyFor,recentFirst,groupItems,fieldOrder,displayValue,formatTime,
-  addColumn,mergeDatabases,importRows,toCsv,toggleGroupSelection,toggleVersionSelection,differingVersionColumns
+  addColumn,mergeDatabases,importRows,toCsv,saveCheckoutRecord,toggleGroupSelection,toggleVersionSelection,differingVersionColumns
 } from './model.js';
 
 const $=id=>document.getElementById(id);
@@ -155,7 +155,7 @@ function renderCheckout(){
   $('checkoutPreview').innerHTML=orderedCategories([...byCategory.keys()]).map(category=>{
     const rows=orderedItems(byCategory.get(category),category),allCols=checkoutColumns(rows),excluded=checkoutPreferences().excludedColumns[category]||[];
     const visible=allCols.filter(c=>!excluded.includes(c.id));
-    return `<section class="checkout-card" data-category="${esc(category)}"><div class="checkout-card-head"><button class="drag-handle" draggable="true" data-drag-category="${esc(category)}" title="Drag to reorder tables">≡</button><span class="checkout-card-title">${esc(category)}</span><span class="checkout-card-subtitle">${rows.length} item${rows.length>1?'s':''}</span></div><div class="field-chips">${allCols.map(c=>`<label class="field-chip"><input type="checkbox" data-column-category="${esc(category)}" data-column-id="${esc(c.id)}" ${excluded.includes(c.id)?'':'checked'} />${esc(c.label)}</label>`).join('')}</div><div class="export-scroll"><table class="export-table"><thead><tr><th class="item-handle"></th>${visible.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead><tbody>${rows.map(it=>`<tr data-preview-row="${esc(it.id)}"><td class="item-handle"><button class="drag-handle" draggable="true" data-drag-item="${esc(it.id)}" data-drag-item-category="${esc(category)}" title="Drag to reorder items">≡</button></td>${visible.map(c=>`<td contenteditable="true" spellcheck="false" title="Edit only this checkout copy">${esc(displayValue(it,c.id))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`;
+    return `<section class="checkout-card" data-category="${esc(category)}"><div class="checkout-card-head"><button class="drag-handle" draggable="true" data-drag-category="${esc(category)}" title="Drag to reorder tables">≡</button><span class="checkout-card-title">${esc(category)}</span><span class="checkout-card-subtitle">${rows.length} item${rows.length>1?'s':''}</span></div><div class="field-chips">${allCols.map(c=>`<label class="field-chip"><input type="checkbox" data-column-category="${esc(category)}" data-column-id="${esc(c.id)}" ${excluded.includes(c.id)?'':'checked'} />${esc(c.label)}</label>`).join('')}</div><div class="export-scroll"><table class="export-table"><thead><tr><th class="item-handle"></th>${visible.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead><tbody>${rows.map(it=>`<tr data-preview-row="${esc(it.id)}"><td class="item-handle"><div class="preview-row-controls"><button class="drag-handle" draggable="true" data-drag-item="${esc(it.id)}" data-drag-item-category="${esc(category)}" title="Drag to reorder items" aria-label="Move ${esc(it.name)}">≡</button><button class="preview-remove-item" type="button" data-remove-preview="${esc(it.id)}" title="Remove ${esc(it.name)} from this checkout" aria-label="Remove ${esc(it.name)} from preview">×</button></div></td>${visible.map(c=>`<td contenteditable="true" spellcheck="false" title="Edit only this checkout copy">${esc(displayValue(it,c.id))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`;
   }).join('');
 }
 
@@ -164,6 +164,9 @@ function renderSavedPlans(){
   const plans=[...state.db.checkouts].sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0));
   $('savedCount').textContent=plans.length;
   $('saveCheckoutPlan').disabled=!state.selected.size;
+  const activePlan=state.db.checkouts.find(c=>c.id===state.activeCheckoutId);
+  $('updateCheckoutPlan').classList.toggle('hidden',!activePlan);
+  $('updateCheckoutPlan').disabled=!activePlan||!state.selected.size;
   $('clearEverything').disabled=!state.selected.size&&!state.activeCheckoutId;
   $('savedPlanList').innerHTML=plans.length?plans.map(plan=>{
     const valid=plan.selectedIds.filter(id=>state.db.items.some(item=>item.id===id)).length;
@@ -174,18 +177,29 @@ function renderSavedPlans(){
     </div>`;
   }).join(''):'<span class="saved-empty">No saved experiments yet. Select materials and click Save checkout.</span>';
 }
+function checkoutPlanDraft(){
+  const preference=checkoutPreferences();
+  return {
+    name:$('planName').value.trim()||defaultPlanName(),
+    selectedIds:selectedItems().map(item=>item.id),
+    categoryOrder:[...preference.categoryOrder],
+    itemOrder:preference.itemOrder,
+    excludedColumns:preference.excludedColumns
+  };
+}
 function saveCheckoutPlan(){
-  const selected=selectedItems();
-  if(!selected.length){toast('Select some materials before saving this experiment.',true);return;}
-  const name=$('planName').value.trim()||defaultPlanName();
-  const preference=checkoutPreferences(),timestamp=new Date().toISOString();
-  let saved=state.db.checkouts.find(c=>c.id===state.activeCheckoutId);
-  const content={name,selectedIds:selected.map(item=>item.id),categoryOrder:[...preference.categoryOrder],
-    itemOrder:structuredClone(preference.itemOrder),excludedColumns:structuredClone(preference.excludedColumns),updatedAt:timestamp};
-  if(saved)Object.assign(saved,content);
-  else{saved={id:makeId(),createdAt:timestamp,...content};state.db.checkouts.push(saved);}
-  state.activeCheckoutId=saved.id;$('planName').value=name;changed();
-  toast(state.token?'Experiment saved; GitHub sync queued.':'Experiment saved on this device. Connect GitHub to share it.');
+  if(!state.selected.size){toast('Select some materials before saving this experiment.',true);return;}
+  const saved=saveCheckoutRecord(state.db,checkoutPlanDraft(),{mode:'new'});
+  state.activeCheckoutId=saved.id;$('planName').value=saved.name;changed();
+  toast(state.token?'New experiment saved; GitHub sync queued.':'New experiment saved on this device. Connect GitHub to share it.');
+}
+function updateCheckoutPlan(){
+  if(!state.selected.size){toast('Select some materials before updating this experiment.',true);return;}
+  const active=state.db.checkouts.find(c=>c.id===state.activeCheckoutId);
+  if(!active){toast('Open a saved experiment first, or use Save as new.',true);return;}
+  const saved=saveCheckoutRecord(state.db,checkoutPlanDraft(),{mode:'update',activeId:active.id});
+  $('planName').value=saved.name;changed();
+  toast(state.token?'Saved experiment updated; GitHub sync queued.':'Saved experiment updated on this device. Connect GitHub to share it.');
 }
 function clearEverything(){
   state.selected.clear();state.checkoutExpanded.clear();state.checkoutCategory='';
@@ -201,7 +215,7 @@ function loadCheckoutPlan(id){
     excludedColumns:structuredClone(plan.excludedColumns)};
   state.checkoutCategory='';state.activeCheckoutId=id;
   $('checkoutSearch').value='';$('planName').value=plan.name;render();
-  toast('Saved checkout loaded. Modify it and click Save checkout to update.');
+  toast('Saved checkout loaded. Use Update opened to change it, or Save as new to keep another copy.');
 }
 function deleteCheckoutPlan(id){
   const plan=state.db.checkouts.find(c=>c.id===id);if(!plan)return;
@@ -442,6 +456,7 @@ function registerEvents(){
   $('clearSelection').addEventListener('click',clearEverything);
   $('clearEverything').addEventListener('click',clearEverything);
   $('saveCheckoutPlan').addEventListener('click',saveCheckoutPlan);
+  $('updateCheckoutPlan').addEventListener('click',updateCheckoutPlan);
   $('savedPlanList').addEventListener('click',event=>{
     const open=event.target.closest('[data-open-plan]');
     if(open){loadCheckoutPlan(open.dataset.openPlan);return;}
@@ -449,6 +464,15 @@ function registerEvents(){
     if(remove)deleteCheckoutPlan(remove.dataset.deletePlan);
   });
   $('checkoutPreview').addEventListener('change',event=>{if(event.target.matches('[data-column-id]'))applyColumnChoice(event.target.dataset.columnCategory,event.target.dataset.columnId,event.target.checked);});
+  $('checkoutPreview').addEventListener('click',event=>{
+    const remove=event.target.closest('[data-remove-preview]');
+    if(!remove)return;
+    const id=remove.dataset.removePreview;
+    if(!state.selected.has(id))return;
+    state.selected.delete(id);
+    // This updates the working checkout only. A saved plan changes only via "Update opened".
+    refreshSelection();
+  });
   $('checkoutPreview').addEventListener('dragstart',onDragStart);$('checkoutPreview').addEventListener('dragover',onDragOver);$('checkoutPreview').addEventListener('drop',onDrop);$('checkoutPreview').addEventListener('dragend',onDragEnd);
   $('checkoutPreview').addEventListener('paste',event=>{if(event.target.closest('[contenteditable]')){event.preventDefault();document.execCommand('insertText',false,event.clipboardData.getData('text/plain'));}});
   document.querySelectorAll('[data-format]').forEach(btn=>{btn.addEventListener('mousedown',event=>event.preventDefault());btn.addEventListener('click',()=>document.execCommand(btn.dataset.format,false,btn.dataset.value||null));});

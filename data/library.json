@@ -258,11 +258,11 @@
       "values": {
         "source": "From Yanchao",
         "storage": "Vu's box, -20 freezer",
-        "stockConcentration": "10 mM",
+        "stockConcentration": "10 mM in DMSO",
         "workingConcentration": "0.05 µM"
       },
       "enteredAt": "2026-10-23T04:58:53.000Z",
-      "updatedAt": "2026-10-26T13:50:18.353Z"
+      "updatedAt": "2026-10-26T13:50:37.044Z"
     },
     {
       "id": "initial-20261022-15",

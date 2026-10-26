@@ -184,7 +184,7 @@
     },
     {
       "id": "initial-20261022-08",
-      "name": "A549",
+      "name": "A549 (WT)",
       "category": "Cell line",
       "values": {
         "cellLineCode": "CCL-185 (WT)",
@@ -194,7 +194,7 @@
         "cellDensity": "100k"
       },
       "enteredAt": "2026-10-23T04:58:47.000Z",
-      "updatedAt": "2026-10-26T03:03:38.995Z"
+      "updatedAt": "2026-10-26T16:29:28.389Z"
     },
     {
       "id": "initial-20261022-09",

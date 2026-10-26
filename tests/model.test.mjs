@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {emptyDatabase,groupItems,fieldOrder,importRows,mergeDatabases,toCsv,normalizeDatabase,toggleGroupSelection,toggleVersionSelection} from '../model.js';
+import {emptyDatabase,groupItems,fieldOrder,importRows,mergeDatabases,toCsv,normalizeDatabase,toggleGroupSelection,toggleVersionSelection,differingVersionColumns} from '../model.js';
 
 function row(id,name,category,enteredAt,values={}){return {id,name,category,enteredAt,updatedAt:enteredAt,values};}
 
@@ -98,4 +98,43 @@ test('a saved checkout can preserve multiple versions of a single material',()=>
   assert.equal(groupItems(restored.items).length,1);
   assert.deepEqual(restored.checkouts[0].selectedIds,['newer','older']);
   assert.deepEqual(restored.checkouts[0].selectedIds.map(id=>restored.items.find(x=>x.id===id).values.cellLineCode),['DKO','WT']);
+});
+
+
+test('compares A549 variants using only the differing cell line code',()=>{
+  const db=emptyDatabase();
+  const versions=[
+    row('new','A549','Cell line','2026-10-25T15:02:00Z',{cellLineCode:'GPX4/UBXD8 DKO',origin:'Human alveolar basal epithelial carcinoma',source:'Department'}),
+    row('old','A549','Cell line','2026-10-22T23:58:00Z',{cellLineCode:'CCL-185 (WT)',origin:'Human alveolar basal epithelial carcinoma',source:'Department'})
+  ];
+  assert.deepEqual(differingVersionColumns(db,versions).map(c=>c.id),['cellLineCode']);
+});
+
+test('detects any differing field among 3 versions including blank versus entered values',()=>{
+  const db=emptyDatabase();
+  db.columns.push({id:'treatment',label:'Treatment'});
+  const versions=[
+    row('v3','SV589','Cell line','2026-10-25T00:00:00Z',{media:'DMEM',treatment:'Erastin',source:'Department'}),
+    row('v2','SV589','Cell line','2026-10-24T00:00:00Z',{media:'DMEM',source:'Department'}),
+    row('v1','SV589','Cell line','2026-10-22T00:00:00Z',{media:'DMEM',treatment:'RSL3',source:'Department'})
+  ];
+  assert.deepEqual(differingVersionColumns(db,versions).map(c=>c.id),['treatment']);
+});
+
+test('shows an empty comparison when only entry dates differ',()=>{
+  const db=emptyDatabase();
+  const versions=[
+    row('recent','A549','Cell line','2026-10-25T00:00:00Z',{source:'Department'}),
+    row('old','A549','Cell line','2026-10-22T00:00:00Z',{source:'Department'})
+  ];
+  assert.deepEqual(differingVersionColumns(db,versions),[]);
+});
+
+test('compares categories and custom fields even when not in current schema',()=>{
+  const db=emptyDatabase();
+  const versions=[
+    row('a','Compound X','Drug','2026-10-25T00:00:00Z',{storage:'-20',unregisteredField:'A'}),
+    row('b','Compound X','Small molecule','2026-10-22T00:00:00Z',{storage:'-20',unregisteredField:'B'})
+  ];
+  assert.deepEqual(differingVersionColumns(db,versions).map(c=>c.id),['category','unregisteredField']);
 });

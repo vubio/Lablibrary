@@ -117,10 +117,11 @@
       "category": "Assay reagent",
       "values": {
         "catalogNumber": "G7570",
-        "vendor": "Promega"
+        "vendor": "Promega",
+        "lotNumber": "0000581985"
       },
       "enteredAt": "2026-10-23T04:58:42.000Z",
-      "updatedAt": "2026-10-23T04:58:42.000Z"
+      "updatedAt": "2026-10-26T14:27:08.591Z"
     },
     {
       "id": "initial-20261022-04",

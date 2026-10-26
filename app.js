@@ -1,14 +1,14 @@
 import {
   REPOSITORY,DATA_PATH,DEFAULT_COLUMNS,AUTO_COLUMNS,emptyDatabase,normalizeDatabase,
   makeId,keyFor,recentFirst,groupItems,fieldOrder,displayValue,formatTime,
-  addColumn,mergeDatabases,importRows,toCsv
+  addColumn,mergeDatabases,importRows,toCsv,toggleGroupSelection,toggleVersionSelection
 } from './model.js';
 
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const LOCAL_KEY='vubio-lablibrary-local-v1',TOKEN_KEY='vubio-lablibrary-token-session';
 const API=`https://api.github.com/repos/${REPOSITORY}/contents/${DATA_PATH}`;
-const state={db:emptyDatabase(),baseDb:emptyDatabase(),baseSha:null,dirty:false,revision:0,token:sessionStorage.getItem(TOKEN_KEY)||'',busy:false,networkError:'',currentPage:'library',selected:new Map(),expanded:new Set(),checkoutExpanded:new Set(),checkoutCategory:'',activeCheckoutId:null,checkoutPrefs:null,editingId:null,cloning:false,fieldDraft:{},syncTimer:null,toastTimer:null};
+const state={db:emptyDatabase(),baseDb:emptyDatabase(),baseSha:null,dirty:false,revision:0,token:sessionStorage.getItem(TOKEN_KEY)||'',busy:false,networkError:'',currentPage:'library',selected:new Set(),expanded:new Set(),checkoutExpanded:new Set(),checkoutCategory:'',activeCheckoutId:null,checkoutPrefs:null,editingId:null,cloning:false,fieldDraft:{},syncTimer:null,toastTimer:null};
 
 function toast(message,error=false){const el=$('toast');el.textContent=message;el.classList.toggle('error',error);el.classList.remove('hidden');clearTimeout(state.toastTimer);state.toastTimer=setTimeout(()=>el.classList.add('hidden'),3600);}
 function setNotice(message='',danger=false){$('notice').textContent=message;$('notice').classList.toggle('hidden',!message);$('notice').classList.toggle('danger',danger);}
@@ -92,11 +92,35 @@ function renderPicker(){
   renderCheckoutCategories();
   const matches=allGroups().filter(g=>g.items.some(it=>(!category||it.category===category)&&(!term||[it.name,it.category,...Object.values(it.values||{})].some(v=>String(v).toLowerCase().includes(term)))));
   $('pickerList').innerHTML=matches.map(g=>{
-    const selectedId=state.selected.get(g.key),checked=!!selectedId,hasOld=g.items.length>1,expanded=state.checkoutExpanded.has(g.key)||checked&&hasOld;
-    return `<div class="picker-group"><div class="picker-head"><input type="checkbox" data-check-group="${esc(g.key)}" ${checked?'checked':''} aria-label="Select ${esc(g.latest.name)}" /><div class="picker-title">${esc(g.latest.name)}<div class="picker-sub">${esc(g.latest.category)} ${hasOld?` · ${g.items.length} versions`:''}</div></div>${hasOld?`<button class="toggle-link" data-toggle-picker="${esc(g.key)}" aria-label="Show versions">${expanded?'⌄':'›'}</button>`:''}</div>${expanded&&hasOld?`<div class="picker-versions">${g.items.map((it,index)=>`<label class="version-choice"><input type="radio" name="pick_${esc(g.key)}" data-choose-version="${esc(g.key)}" value="${esc(it.id)}" ${selectedId===it.id?'checked':''} /><span>${index===0?'Newest · ':'Version · '}${esc(formatTime(it.enteredAt))}</span><small>${esc(it.values?.lotNumber||it.values?.workingConcentration||'')}</small></label>`).join('')}</div>`:''}</div>`;
+    const selectedCount=g.items.filter(it=>state.selected.has(it.id)).length;
+    const checked=selectedCount>0,hasOld=g.items.length>1,expanded=state.checkoutExpanded.has(g.key)||(checked&&hasOld);
+    return `<div class="picker-group">
+      <div class="picker-head">
+        <input type="checkbox" data-check-group="${esc(g.key)}" ${checked?'checked':''} aria-label="${checked?'Remove all selected versions of':'Select newest version of'} ${esc(g.latest.name)}" title="${checked?'Uncheck to remove every selected version':'Select newest version'}" />
+        <div class="picker-title">${esc(g.latest.name)}
+          <div class="picker-sub">${esc(g.latest.category)}${hasOld?` · ${g.items.length} versions`:''}${selectedCount?` · ${selectedCount} selected`:''}</div>
+        </div>
+        <div class="picker-actions">
+          <button class="picker-action-btn" type="button" data-edit-picker="${esc(g.latest.id)}" aria-label="Edit ${esc(g.latest.name)} latest version">Edit</button>
+          <button class="picker-action-btn" type="button" data-copy-picker="${esc(g.latest.id)}" aria-label="Create a new version of ${esc(g.latest.name)}">＋ Version</button>
+        </div>
+        ${hasOld?`<button class="toggle-link" type="button" data-toggle-picker="${esc(g.key)}" aria-label="${expanded?'Hide':'Show'} versions of ${esc(g.latest.name)}" aria-expanded="${expanded}">${expanded?'⌄':'›'}</button>`:''}
+      </div>
+      ${expanded&&hasOld?`<div class="picker-versions">${g.items.map((it,index)=>{
+        const detail=[it.values?.cellLineCode,it.values?.lotNumber?`Lot ${it.values.lotNumber}`:'',it.values?.workingConcentration].filter(Boolean).join(' · ');
+        return `<div class="version-entry">
+          <label class="version-choice">
+            <input type="checkbox" data-choose-version="${esc(g.key)}" value="${esc(it.id)}" ${state.selected.has(it.id)?'checked':''} aria-label="Select ${esc(it.name)} ${index===0?'newest':'earlier'} version ${esc(detail)}" />
+            <span>${index===0?'Newest':'Earlier'} · ${esc(formatTime(it.enteredAt))}</span>
+            ${detail?`<small title="${esc(detail)}">${esc(detail)}</small>`:''}
+          </label>
+          <button type="button" class="picker-version-edit" data-edit-picker="${esc(it.id)}" aria-label="Edit this version of ${esc(it.name)}">Edit</button>
+        </div>`;
+      }).join('')}</div>`:''}
+    </div>`;
   }).join('')||'<div class="empty-preview"><p>No matching items.</p></div>';
 }
-function selectedItems(){return [...state.selected.values()].map(id=>state.db.items.find(it=>it.id===id)).filter(Boolean);}
+function selectedItems(){return [...state.selected].map(id=>state.db.items.find(it=>it.id===id)).filter(Boolean);}
 function orderedCategories(categories){const preferred=checkoutPreferences().categoryOrder;return [...categories].sort((a,b)=>{const ia=preferred.indexOf(a),ib=preferred.indexOf(b);return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b);});}
 function orderedItems(items,category){const preferred=checkoutPreferences().itemOrder[category]||[];return [...items].sort((a,b)=>{const ia=preferred.indexOf(a.id),ib=preferred.indexOf(b.id);return (ia<0?999:ia)-(ib<0?999:ib)||a.name.localeCompare(b.name);});}
 function checkoutColumns(items){const cols=[AUTO_COLUMNS[0],...state.db.columns,AUTO_COLUMNS[2]];return cols.filter(c=>c.id==='name'||c.id==='enteredAt'||items.some(it=>String(displayValue(it,c.id)||'').trim()));}
@@ -148,9 +172,8 @@ function clearEverything(){
 }
 function loadCheckoutPlan(id){
   const plan=state.db.checkouts.find(c=>c.id===id);if(!plan)return;
-  state.selected=new Map();
-  for(const id of plan.selectedIds){const item=itemById(id);if(item)state.selected.set(keyFor(item.name),id);}
-  state.checkoutExpanded=new Set(state.selected.keys());
+  state.selected=new Set(plan.selectedIds.filter(id=>!!itemById(id)));
+  state.checkoutExpanded=new Set([...state.selected].map(id=>keyFor(itemById(id).name)));
   state.checkoutPrefs={categoryOrder:[...plan.categoryOrder],itemOrder:structuredClone(plan.itemOrder),
     excludedColumns:structuredClone(plan.excludedColumns)};
   state.checkoutCategory='';state.activeCheckoutId=id;
@@ -212,7 +235,22 @@ function inlineEdit(el){
   input.addEventListener('blur',()=>finish(true),{once:true});input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();finish(true);}if(event.key==='Escape'){event.preventDefault();finish(false);}});
 }
 
-function setSelection(key,itemId){if(itemId){state.selected.set(key,itemId);state.checkoutExpanded.add(key);}else state.selected.delete(key);renderStats();renderPicker();renderCheckout();renderSavedPlans();}
+function refreshSelection(){
+  renderStats();renderPicker();renderCheckout();renderSavedPlans();
+}
+function setGroupSelection(key,checked){
+  const group=allGroups().find(g=>g.key===key);
+  if(!group)return;
+  state.selected=toggleGroupSelection(state.selected,group.items.map(it=>it.id),checked);
+  if(checked)state.checkoutExpanded.add(key);
+  refreshSelection();
+}
+function setVersionSelection(id,checked){
+  const item=itemById(id);if(!item)return;
+  state.selected=toggleVersionSelection(state.selected,id,checked);
+  state.checkoutExpanded.add(keyFor(item.name));
+  refreshSelection();
+}
 function applyColumnChoice(category,id,checked){
   const set=new Set(checkoutPreferences().excludedColumns[category]||[]);
   if(checked)set.delete(id);else set.add(id);
@@ -361,10 +399,21 @@ function registerEvents(){
   $('fieldForm').addEventListener('submit',event=>{event.preventDefault();const label=$('newFieldName').value.trim();if(!label)return;const col=addColumn(state.db,label);closeModal('fieldDialog');renderItemFields();document.querySelector(`[data-form-col="${CSS.escape(col.id)}"]`)?.focus();changed();});
   document.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',()=>closeModal(btn.dataset.close)));
   $('pickerList').addEventListener('change',event=>{
-    if(event.target.matches('[data-check-group]')){const key=event.target.dataset.checkGroup,g=allGroups().find(x=>x.key===key);setSelection(key,event.target.checked?g?.latest.id:null);}
-    if(event.target.matches('[data-choose-version]'))setSelection(event.target.dataset.chooseVersion,event.target.value);
+    if(event.target.matches('[data-check-group]'))setGroupSelection(event.target.dataset.checkGroup,event.target.checked);
+    if(event.target.matches('[data-choose-version]'))setVersionSelection(event.target.value,event.target.checked);
   });
-  $('pickerList').addEventListener('click',event=>{const button=event.target.closest('[data-toggle-picker]');if(button){const key=button.dataset.togglePicker;if(state.checkoutExpanded.has(key))state.checkoutExpanded.delete(key);else state.checkoutExpanded.add(key);renderPicker();}});
+  $('pickerList').addEventListener('click',event=>{
+    const edit=event.target.closest('[data-edit-picker]');
+    if(edit){openItemDialog(itemById(edit.dataset.editPicker));return;}
+    const copy=event.target.closest('[data-copy-picker]');
+    if(copy){openItemDialog(itemById(copy.dataset.copyPicker),true);return;}
+    const button=event.target.closest('[data-toggle-picker]');
+    if(button){
+      const key=button.dataset.togglePicker;
+      if(state.checkoutExpanded.has(key))state.checkoutExpanded.delete(key);else state.checkoutExpanded.add(key);
+      renderPicker();
+    }
+  });
   $('clearSelection').addEventListener('click',clearEverything);
   $('clearEverything').addEventListener('click',clearEverything);
   $('saveCheckoutPlan').addEventListener('click',saveCheckoutPlan);

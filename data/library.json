@@ -105,10 +105,11 @@
       "values": {
         "host": "Goat",
         "workingConcentration": "1:500",
-        "vendor": "Thermo"
+        "vendor": "Thermo Fisher",
+        "source": "From Yanchao"
       },
       "enteredAt": "2026-10-23T04:58:41.000Z",
-      "updatedAt": "2026-10-23T04:58:41.000Z"
+      "updatedAt": "2026-10-26T13:57:30.122Z"
     },
     {
       "id": "initial-20261022-03",

@@ -284,8 +284,8 @@
       "Cell line",
       "Drug",
       "1° antibody",
-      "Fluorescent probe",
-      "2° antibody"
+      "2° antibody",
+      "Fluorescent probe"
     ],
     "itemOrder": {
       "Fluorescent probe": [

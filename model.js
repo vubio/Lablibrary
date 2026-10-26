@@ -71,6 +71,28 @@ export function groupItems(items){
   for(const g of groups.values()){g.items.sort(recentFirst);g.latest=g.items[0];}
   return [...groups.values()].sort((a,b)=>a.latest.name.localeCompare(b.latest.name,undefined,{numeric:true,sensitivity:'base'}));
 }
+// Sort visible inventory groups by the value in their displayed (latest) row.
+// Keep older versions directly beneath their parent rather than scattering rows.
+export function sortLibraryGroups(groups,columnId='name',direction='asc'){
+  const dir=direction==='desc'?-1:1;
+  const collator=new Intl.Collator(undefined,{numeric:true,sensitivity:'base'});
+  const getValue=g=>columnId==='enteredAt'
+    ? String(g.latest.enteredAt||'')
+    : String(displayValue(g.latest,columnId)||'').trim();
+  return [...groups].sort((a,b)=>{
+    const x=getValue(a),y=getValue(b);
+    // Empty values go last in either direction.
+    if(!x&&!y)return collator.compare(a.latest.name,b.latest.name);
+    if(!x)return 1;
+    if(!y)return -1;
+    const comparison=columnId==='enteredAt'
+      ? Date.parse(x)-Date.parse(y)
+      : collator.compare(x,y);
+    return (Number.isFinite(comparison)&&comparison!==0?Math.sign(comparison)*dir:0)
+      ||collator.compare(a.latest.name,b.latest.name)
+      ||collator.compare(a.latest.id,b.latest.id);
+  });
+}
 export function fieldOrder(db,category){
   const matches=db.items.filter(x=>x.category.toLocaleLowerCase()===String(category).toLocaleLowerCase());
   if(!matches.length)return db.columns;

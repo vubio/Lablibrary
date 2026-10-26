@@ -411,11 +411,11 @@
       "name": "Palmitic Acid",
       "category": "Chemicals",
       "values": {
-        "stockConcentration": "10 mM",
+        "stockConcentration": "5 mM",
         "storage": "Yaqin's box, L5.226A -20 freezer"
       },
       "enteredAt": "2026-10-26T20:09:56.979Z",
-      "updatedAt": "2026-10-26T20:09:56.979Z"
+      "updatedAt": "2026-10-26T20:53:23.105Z"
     }
   ],
   "checkouts": [

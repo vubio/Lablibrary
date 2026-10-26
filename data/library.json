@@ -138,10 +138,16 @@
       "name": "Phalloidin Plus 405",
       "category": "Fluorescent probe",
       "values": {
-        "vendor": "Thermo"
+        "vendor": "Thermo",
+        "storage": "Vu's box, -20° freezer",
+        "stockConcentration": "400X in DMSO",
+        "workingConcentration": "1X",
+        "catalogNumber": "A30104",
+        "lotNumber": "3318646",
+        "source": "From Yanchao"
       },
       "enteredAt": "2026-10-23T04:58:44.000Z",
-      "updatedAt": "2026-10-23T04:58:44.000Z"
+      "updatedAt": "2026-10-26T14:05:01.937Z"
     },
     {
       "id": "initial-20261022-06",

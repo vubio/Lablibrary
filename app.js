@@ -93,7 +93,7 @@ function renderPicker(){
   const matches=allGroups().filter(g=>g.items.some(it=>(!category||it.category===category)&&(!term||[it.name,it.category,...Object.values(it.values||{})].some(v=>String(v).toLowerCase().includes(term)))));
   $('pickerList').innerHTML=matches.map(g=>{
     const selectedCount=g.items.filter(it=>state.selected.has(it.id)).length;
-    const checked=selectedCount>0,hasOld=g.items.length>1,expanded=state.checkoutExpanded.has(g.key)||(checked&&hasOld);
+    const checked=selectedCount>0,hasOld=g.items.length>1,expanded=state.checkoutExpanded.has(g.key);
     return `<div class="picker-group">
       <div class="picker-head">
         <input type="checkbox" data-check-group="${esc(g.key)}" ${checked?'checked':''} aria-label="${checked?'Remove all selected versions of':'Select newest version of'} ${esc(g.latest.name)}" title="${checked?'Uncheck to remove every selected version':'Select newest version'}" />

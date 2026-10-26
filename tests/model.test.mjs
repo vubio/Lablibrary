@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {emptyDatabase,groupItems,fieldOrder,importRows,mergeDatabases,toCsv,normalizeDatabase} from '../model.js';
+import {emptyDatabase,groupItems,fieldOrder,importRows,mergeDatabases,toCsv,normalizeDatabase,toggleGroupSelection,toggleVersionSelection} from '../model.js';
 
 function row(id,name,category,enteredAt,values={}){return {id,name,category,enteredAt,updatedAt:enteredAt,values};}
 
@@ -60,4 +60,42 @@ test('concurrent edits to different saved checkouts merge; same checkout conflic
   const a=normalizeDatabase(merged.database),b=normalizeDatabase(merged.database);
   a.checkouts[0].name='Edited on work PC';b.checkouts[0].name='Edited on lab PC';
   assert.equal(mergeDatabases(merged.database,a,b).conflicts.length,1);
+});
+
+
+test('checkout initially selects newest version and can select both versions',()=>{
+  const versions=['newer','older'];
+  let chosen=toggleGroupSelection(new Set(),versions,true);
+  assert.deepEqual([...chosen],['newer']);
+  chosen=toggleVersionSelection(chosen,'older',true);
+  assert.deepEqual([...chosen],['newer','older']);
+  chosen=toggleVersionSelection(chosen,'newer',false);
+  assert.deepEqual([...chosen],['older']);
+  chosen=toggleVersionSelection(chosen,'newer',true);
+  assert.deepEqual([...chosen],['older','newer']);
+  chosen=toggleGroupSelection(chosen,versions,false);
+  assert.deepEqual([...chosen],[]);
+});
+
+test('selecting material groups does not disturb versions selected in other groups',()=>{
+  let chosen=new Set(['drug-v1']);
+  chosen=toggleGroupSelection(chosen,['cell-v2','cell-v1'],true);
+  chosen=toggleVersionSelection(chosen,'cell-v1',true);
+  assert.deepEqual([...chosen],['drug-v1','cell-v2','cell-v1']);
+  chosen=toggleGroupSelection(chosen,['cell-v2','cell-v1'],false);
+  assert.deepEqual([...chosen],['drug-v1']);
+});
+
+test('a saved checkout can preserve multiple versions of a single material',()=>{
+  const db=emptyDatabase();
+  db.items=[
+    row('older','A549','Cell line','2026-10-20T12:00:00Z',{cellLineCode:'WT'}),
+    row('newer','A549','Cell line','2026-10-22T12:00:00Z',{cellLineCode:'DKO'})
+  ];
+  db.checkouts.push({id:'draft',name:'Compare A549 versions',selectedIds:['newer','older'],
+    categoryOrder:['Cell line'],itemOrder:{},excludedColumns:{},createdAt:'2026-10-22T12:00:00Z',updatedAt:'2026-10-22T12:00:00Z'});
+  const restored=normalizeDatabase(JSON.parse(JSON.stringify(db)));
+  assert.equal(groupItems(restored.items).length,1);
+  assert.deepEqual(restored.checkouts[0].selectedIds,['newer','older']);
+  assert.deepEqual(restored.checkouts[0].selectedIds.map(id=>restored.items.find(x=>x.id===id).values.cellLineCode),['DKO','WT']);
 });

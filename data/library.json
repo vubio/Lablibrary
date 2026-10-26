@@ -334,6 +334,9 @@
       ],
       "Fluorescent probe": [
         "enteredAt"
+      ],
+      "Other chemical": [
+        "enteredAt"
       ]
     },
     "categoryOrder": [

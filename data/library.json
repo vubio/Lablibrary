@@ -370,6 +370,10 @@
         "Fluorescent probe": [
           "initial-20261022-04",
           "initial-20261022-06"
+        ],
+        "Cell line": [
+          "initial-20261022-08",
+          "initial-20261022-09"
         ]
       },
       "excludedColumns": {
@@ -392,7 +396,7 @@
           "enteredAt"
         ]
       },
-      "updatedAt": "2026-10-26T14:16:58.538Z"
+      "updatedAt": "2026-10-26T14:18:19.153Z"
     }
   ],
   "preferences": {

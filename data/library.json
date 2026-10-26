@@ -282,8 +282,8 @@
     },
     "categoryOrder": [
       "Cell line",
-      "1° antibody",
       "Drug",
+      "1° antibody",
       "Fluorescent probe",
       "2° antibody"
     ],

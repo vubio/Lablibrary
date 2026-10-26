@@ -94,6 +94,26 @@ export function differingVersionColumns(db,versions){
 export function formatTime(value){const t=Date.parse(value);if(!Number.isFinite(t))return String(value||'');return new Date(t).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
 export function slug(s){return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,40)||'field';}
 export function addColumn(db,label){const clean=label.trim();const existing=db.columns.find(c=>c.label.toLocaleLowerCase()===clean.toLocaleLowerCase());if(existing)return existing;let id=slug(clean),n=2;while([...db.columns,...AUTO_COLUMNS].some(c=>c.id===id))id=`${slug(clean)}_${n++}`;const col={id,label:clean};db.columns.push(col);return col;}
+// Saving another experiment must never overwrite the active one implicitly.
+// An existing plan is updated only when the explicit "update" action is chosen.
+export function saveCheckoutRecord(db,draft,{mode='new',activeId=null,id=makeId(),timestamp=new Date().toISOString()}={}){
+  if(mode!=='new'&&mode!=='update')throw new Error('Unknown checkout save mode.');
+  const existing=mode==='update'?db.checkouts.find(c=>c.id===activeId):null;
+  if(mode==='update'&&!existing)throw new Error('The saved experiment is no longer available to update.');
+  if(mode==='new'&&db.checkouts.some(c=>c.id===id))throw new Error('This experiment ID already exists.');
+  const record={
+    name:String(draft.name||'').trim()||'Untitled experiment',
+    selectedIds:[...new Set(draft.selectedIds||[])],
+    categoryOrder:[...(draft.categoryOrder||[])],
+    itemOrder:structuredClone(draft.itemOrder||{}),
+    excludedColumns:structuredClone(draft.excludedColumns||{}),
+    updatedAt:timestamp
+  };
+  if(existing){Object.assign(existing,record);return existing;}
+  const created={id,createdAt:timestamp,...record};
+  db.checkouts.push(created);
+  return created;
+}
 export function mergeDatabases(base,local,remote){
   // Three-way merge. Concurrent changes to the same record stop rather than silently overwrite.
   base=normalizeDatabase(base);local=normalizeDatabase(local);remote=normalizeDatabase(remote);

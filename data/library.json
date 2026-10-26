@@ -304,6 +304,20 @@
       },
       "enteredAt": "2026-10-26T13:48:02.726Z",
       "updatedAt": "2026-10-26T13:49:08.497Z"
+    },
+    {
+      "id": "95c626f5-d563-41d3-8a35-7d82673b3343",
+      "name": "Prolong Diamond Antifade Mountant with DAPI",
+      "category": "Other chemical",
+      "values": {
+        "catalogNumber": "P36962",
+        "lotNumber": "3071458",
+        "vendor": "Thermo Fisher",
+        "source": "From Yanchao",
+        "storage": "Vu's Box 1, 4° fridge"
+      },
+      "enteredAt": "2026-10-26T13:54:57.357Z",
+      "updatedAt": "2026-10-26T13:54:57.357Z"
     }
   ],
   "checkouts": [],

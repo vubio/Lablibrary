@@ -17,7 +17,8 @@
     "Protein / Cytokine",
     "Transfection reagent",
     "Other chemical",
-    "Drug"
+    "Drug",
+    "Others"
   ],
   "columns": [
     {
@@ -322,7 +323,7 @@
     {
       "id": "95c626f5-d563-41d3-8a35-7d82673b3343",
       "name": "Prolong Diamond Antifade Mountant with DAPI",
-      "category": "Other chemical",
+      "category": "Others",
       "values": {
         "catalogNumber": "P36962",
         "lotNumber": "3071458",
@@ -331,12 +332,12 @@
         "storage": "Vu's Box 1, 4° fridge"
       },
       "enteredAt": "2026-10-26T13:54:57.357Z",
-      "updatedAt": "2026-10-26T13:54:57.357Z"
+      "updatedAt": "2026-10-26T19:19:03.411Z"
     },
     {
       "id": "3ccab826-0ac1-41e2-9db5-188ffbe80dd4",
       "name": "ProLong Glass Antifade Mountant",
-      "category": "Other chemical",
+      "category": "Others",
       "values": {
         "catalogNumber": "P36980",
         "lotNumber": "3361453",
@@ -345,7 +346,7 @@
         "storage": "Vu's Box 1, 4° fridge"
       },
       "enteredAt": "2026-10-26T14:06:38.607Z",
-      "updatedAt": "2026-10-26T14:06:38.607Z"
+      "updatedAt": "2026-10-26T19:19:07.713Z"
     },
     {
       "id": "77d36ca0-2c80-459b-a2e0-263868a5fb06",

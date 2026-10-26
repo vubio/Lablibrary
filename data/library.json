@@ -275,6 +275,20 @@
       },
       "enteredAt": "2026-10-23T04:58:54.000Z",
       "updatedAt": "2026-10-23T04:58:54.000Z"
+    },
+    {
+      "id": "24cf3cdb-255c-4ded-9a26-30a3cb26d6f4",
+      "name": "SV589",
+      "category": "Cell line",
+      "values": {
+        "media": "DMEM-Low glucose, 5% FCS, P/S",
+        "incubator": "5% CO2, 37℃",
+        "cellDensity": "100k",
+        "dishSize": "35-mm (MatTek glass bottom)",
+        "source": "Department"
+      },
+      "enteredAt": "2026-10-26T03:02:56.785Z",
+      "updatedAt": "2026-10-26T03:02:56.785Z"
     }
   ],
   "checkouts": [],

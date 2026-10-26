@@ -374,6 +374,19 @@
       },
       "enteredAt": "2026-10-26T14:55:14.711Z",
       "updatedAt": "2026-10-26T14:55:14.711Z"
+    },
+    {
+      "id": "e50d8df2-16e0-4977-9517-81a2a54c5dee",
+      "name": "Retinol",
+      "category": "Drug",
+      "values": {
+        "stockConcentration": "10 mM in DMSO",
+        "catalogNumber": "R7632-25MG",
+        "vendor": "Millipore Sigma",
+        "storage": "Vu's box, -20 freezer"
+      },
+      "enteredAt": "2026-10-26T15:15:43.741Z",
+      "updatedAt": "2026-10-26T15:15:43.741Z"
     }
   ],
   "checkouts": [

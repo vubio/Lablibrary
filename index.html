@@ -45,6 +45,16 @@
     </main>
   </div>
 
+  <dialog id="compareDialog" class="modal compare-modal" aria-labelledby="compareDialogTitle">
+    <div class="modal-head"><div>
+      <div class="eyebrow">VERSION COMPARISON</div>
+      <h2 id="compareDialogTitle">Compare versions</h2>
+      <p id="compareSummary">Only fields that differ are shown below.</p>
+    </div><button class="close-btn" type="button" data-close="compareDialog" aria-label="Close comparison">×</button></div>
+    <div class="compare-body"><div id="compareContent"></div></div>
+    <div class="modal-foot"><button class="button subtle" type="button" data-close="compareDialog">Close</button></div>
+  </dialog>
+
   <dialog id="itemDialog" class="modal item-modal"><form method="dialog" id="itemForm"><div class="modal-head"><div><div class="eyebrow">LIBRARY ENTRY</div><h2 id="itemDialogTitle">New research item</h2><p>Start with a name; relevant fields appear after choosing a category.</p></div><button class="close-btn" value="cancel" type="button" data-close="itemDialog" aria-label="Close">×</button></div><div class="modal-body"><div class="form-row-two"><label class="form-field"><span>Item name <b>*</b></span><input id="itemName" autocomplete="off" required placeholder="e.g., Alexa 647 Goat Anti-Rabbit" /></label><label class="form-field"><span>Category <b>*</b></span><input id="itemCategory" list="categorySuggestions" autocomplete="off" required placeholder="Choose or type a new category" /><datalist id="categorySuggestions"></datalist></label></div><div id="versionWarning" class="version-warning hidden"></div><div class="form-section-title"><span>DETAILS <small id="smartHint">Select a category for suggestions</small></span><button id="addFieldBtn" class="text-button" type="button">＋ Add column</button></div><div id="itemFields" class="form-grid"></div><div class="form-hint">Suggestions come from earlier entries in the selected category. Leave any fields blank.</div></div><div class="modal-foot"><button id="cancelItem" class="button subtle" type="button">Cancel</button><button id="submitItem" class="button primary" type="submit">Save item</button></div></form></dialog>
 
   <dialog id="fieldDialog" class="modal small-modal"><form method="dialog" id="fieldForm"><div class="modal-head"><div><div class="eyebrow">CUSTOM DATABASE FIELD</div><h2>Add a column</h2></div><button class="close-btn" value="cancel" type="button" data-close="fieldDialog">×</button></div><div class="modal-body"><label class="form-field"><span>Column name</span><input id="newFieldName" required placeholder="e.g., Passage number" /></label><p class="form-hint">The new column becomes available to every category, even when most items leave it blank.</p></div><div class="modal-foot"><button class="button subtle" type="button" data-close="fieldDialog">Cancel</button><button class="button primary" type="submit">Add column</button></div></form></dialog>

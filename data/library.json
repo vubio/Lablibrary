@@ -152,10 +152,12 @@
         "storage": "Vu's box, -20° freezer",
         "stockConcentration": "400X",
         "workingConcentration": "1X",
-        "source": "From Yanchao"
+        "source": "From Yanchao",
+        "catalogNumber": "A12379",
+        "lotNumber": "3184335"
       },
       "enteredAt": "2026-10-23T04:58:45.000Z",
-      "updatedAt": "2026-10-26T13:58:48.261Z"
+      "updatedAt": "2026-10-26T14:00:50.208Z"
     },
     {
       "id": "initial-20261022-07",

@@ -198,17 +198,17 @@
     },
     {
       "id": "initial-20261022-09",
-      "name": "A549",
+      "name": "A549 (GPX4/UBDX8 DKO)",
       "category": "Cell line",
       "values": {
-        "cellLineCode": "TR 5023 (GPX4/UBDX8 DKO)",
+        "cellLineCode": "TR 5023-1k (GPX4/UBDX8 DKO)",
         "origin": "Human alveolar basal epithelial carcinoma",
         "source": "Department",
         "cellDensity": "100k",
         "dishSize": "35-mm (MatTek glass bottom)"
       },
       "enteredAt": "2026-10-23T04:58:48.000Z",
-      "updatedAt": "2026-10-26T03:02:17.919Z"
+      "updatedAt": "2026-10-26T16:29:53.563Z"
     },
     {
       "id": "initial-20261022-10",

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {emptyDatabase,groupItems,fieldOrder,importRows,mergeDatabases,toCsv,normalizeDatabase,toggleGroupSelection,toggleVersionSelection,differingVersionColumns} from '../model.js';
+import {emptyDatabase,groupItems,fieldOrder,importRows,mergeDatabases,toCsv,normalizeDatabase,toggleGroupSelection,toggleVersionSelection,differingVersionColumns,saveCheckoutRecord} from '../model.js';
 
 function row(id,name,category,enteredAt,values={}){return {id,name,category,enteredAt,updatedAt:enteredAt,values};}
 
@@ -137,4 +137,37 @@ test('compares categories and custom fields even when not in current schema',()=
     row('b','Compound X','Small molecule','2026-10-22T00:00:00Z',{storage:'-20',unregisteredField:'B'})
   ];
   assert.deepEqual(differingVersionColumns(db,versions).map(c=>c.id),['category','unregisteredField']);
+});
+
+
+test('saving successive checkouts always creates independent records',()=>{
+  const db=emptyDatabase();
+  const draft={name:'SV589 viability',selectedIds:['sv1'],categoryOrder:['Cell line'],itemOrder:{},excludedColumns:{}};
+  const first=saveCheckoutRecord(db,draft,{mode:'new',id:'plan-a',timestamp:'2026-10-26T10:00:00Z'});
+  draft.name='A549 DKO imaging';draft.selectedIds=['a549','drug1'];
+  const second=saveCheckoutRecord(db,draft,{mode:'new',activeId:'plan-a',id:'plan-b',timestamp:'2026-10-26T11:00:00Z'});
+  assert.equal(db.checkouts.length,2);
+  assert.equal(first.name,'SV589 viability');
+  assert.deepEqual(first.selectedIds,['sv1']);
+  assert.equal(second.name,'A549 DKO imaging');
+  assert.deepEqual(second.selectedIds,['a549','drug1']);
+  assert.equal(db.checkouts[0].id,'plan-a');
+  assert.equal(db.checkouts[1].id,'plan-b');
+});
+
+test('only explicit update can replace an opened saved checkout',()=>{
+  const db=emptyDatabase();
+  saveCheckoutRecord(db,{name:'Original',selectedIds:['a']},{id:'plan-a',timestamp:'2026-10-26T10:00:00Z'});
+  const changed=saveCheckoutRecord(db,{name:'Revised',selectedIds:['b']},{mode:'update',activeId:'plan-a',timestamp:'2026-10-26T12:00:00Z'});
+  assert.equal(db.checkouts.length,1);
+  assert.equal(changed.name,'Revised');
+  assert.deepEqual(changed.selectedIds,['b']);
+  assert.equal(changed.createdAt,'2026-10-26T10:00:00Z');
+  assert.equal(changed.updatedAt,'2026-10-26T12:00:00Z');
+});
+
+test('updating missing plans fails rather than making a silent duplicate',()=>{
+  const db=emptyDatabase();
+  assert.throws(()=>saveCheckoutRecord(db,{name:'Missing',selectedIds:[]},{mode:'update',activeId:'not-here'}));
+  assert.equal(db.checkouts.length,0);
 });

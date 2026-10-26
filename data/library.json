@@ -230,10 +230,12 @@
       "category": "Cell line",
       "values": {
         "origin": "Rat hepatic stellate cell",
-        "source": "Department"
+        "source": "Department",
+        "cellDensity": "1k & 5k",
+        "dishSize": "96-well"
       },
       "enteredAt": "2026-10-23T04:58:50.000Z",
-      "updatedAt": "2026-10-23T04:58:50.000Z"
+      "updatedAt": "2026-10-26T14:28:51.288Z"
     },
     {
       "id": "initial-20261022-12",
@@ -342,6 +344,21 @@
       },
       "enteredAt": "2026-10-26T14:06:38.607Z",
       "updatedAt": "2026-10-26T14:06:38.607Z"
+    },
+    {
+      "id": "77d36ca0-2c80-459b-a2e0-263868a5fb06",
+      "name": "Huh7",
+      "category": "Cell line",
+      "values": {
+        "media": "DMEM-High glucose, 5% FCS, P/S",
+        "incubator": "5% CO2, 37℃",
+        "cellDensity": "1k & 5k",
+        "dishSize": "96-well",
+        "origin": "Human hepatocellular carcinoma",
+        "source": "Department"
+      },
+      "enteredAt": "2026-10-26T14:29:09.994Z",
+      "updatedAt": "2026-10-26T14:29:09.994Z"
     }
   ],
   "checkouts": [

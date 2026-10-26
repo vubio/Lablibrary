@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {emptyDatabase,groupItems,fieldOrder,importRows,mergeDatabases,toCsv,normalizeDatabase,toggleGroupSelection,toggleVersionSelection,differingVersionColumns,saveCheckoutRecord} from '../model.js';
+import {emptyDatabase,groupItems,fieldOrder,importRows,mergeDatabases,toCsv,normalizeDatabase,toggleGroupSelection,toggleVersionSelection,differingVersionColumns,saveCheckoutRecord,sortLibraryGroups} from '../model.js';
 
 function row(id,name,category,enteredAt,values={}){return {id,name,category,enteredAt,updatedAt:enteredAt,values};}
 
@@ -170,4 +170,49 @@ test('updating missing plans fails rather than making a silent duplicate',()=>{
   const db=emptyDatabase();
   assert.throws(()=>saveCheckoutRecord(db,{name:'Missing',selectedIds:[]},{mode:'update',activeId:'not-here'}));
   assert.equal(db.checkouts.length,0);
+});
+
+
+test('sorts research materials by category ascending and descending',()=>{
+  const db=emptyDatabase();
+  db.items=[
+    row('b','Erastin 2','Drug','2026-10-25T00:00:00Z'),
+    row('c','A549','Cell line','2026-10-26T00:00:00Z'),
+    row('a','BODIPY','Fluorescent probe','2026-10-24T00:00:00Z')
+  ];
+  const groups=groupItems(db.items);
+  assert.deepEqual(sortLibraryGroups(groups,'category','asc').map(g=>g.latest.name),['A549','Erastin 2','BODIPY']);
+  assert.deepEqual(sortLibraryGroups(groups,'category','desc').map(g=>g.latest.name),['BODIPY','Erastin 2','A549']);
+});
+
+test('sorts column values naturally and puts blanks last in either direction',()=>{
+  const items=[
+    row('c','Blank','Cell line','2026-10-25T00:00:00Z',{}),
+    row('a','Ten','Cell line','2026-10-26T00:00:00Z',{lotNumber:'10'}),
+    row('b','Two','Cell line','2026-10-24T00:00:00Z',{lotNumber:'2'})
+  ];
+  const groups=groupItems(items);
+  assert.deepEqual(sortLibraryGroups(groups,'lotNumber','asc').map(g=>g.latest.name),['Two','Ten','Blank']);
+  assert.deepEqual(sortLibraryGroups(groups,'lotNumber','desc').map(g=>g.latest.name),['Ten','Two','Blank']);
+});
+
+test('sorts timestamps chronologically rather than by displayed date strings',()=>{
+  const items=[
+    row('old','Older','Drug','2026-09-30T18:00:00Z'),
+    row('new','Newer','Drug','2026-10-25T12:00:00Z'),
+    row('mid','Middle','Drug','2026-10-04T12:00:00Z')
+  ];
+  assert.deepEqual(sortLibraryGroups(groupItems(items),'enteredAt','asc').map(g=>g.latest.name),['Older','Middle','Newer']);
+  assert.deepEqual(sortLibraryGroups(groupItems(items),'enteredAt','desc').map(g=>g.latest.name),['Newer','Middle','Older']);
+});
+
+test('sorting leaves earlier versions attached to their latest group',()=>{
+  const items=[
+    row('old','A549','Cell line','2026-10-01T00:00:00Z',{cellLineCode:'WT'}),
+    row('new','A549','Cell line','2026-10-26T00:00:00Z',{cellLineCode:'DKO'}),
+    row('other','Huh7','Cell line','2026-10-25T00:00:00Z',{cellLineCode:'Huh7'})
+  ];
+  const ordered=sortLibraryGroups(groupItems(items),'cellLineCode','asc');
+  assert.equal(ordered.length,2);
+  assert.deepEqual(ordered.find(g=>g.latest.name==='A549').items.map(x=>x.id),['new','old']);
 });

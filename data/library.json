@@ -347,7 +347,7 @@
     {
       "id": "4a94cf4b-09ff-40c4-8868-2e8dbc8abf53",
       "createdAt": "2026-10-26T14:15:40.836Z",
-      "name": "Experiment — Oct 26, 2026",
+      "name": "Experiment — Oct 26, 2026_SV589",
       "selectedIds": [
         "24cf3cdb-255c-4ded-9a26-30a3cb26d6f4",
         "initial-20261022-14",
@@ -391,7 +391,7 @@
           "enteredAt"
         ]
       },
-      "updatedAt": "2026-10-26T14:15:40.836Z"
+      "updatedAt": "2026-10-26T14:15:57.702Z"
     }
   ],
   "preferences": {

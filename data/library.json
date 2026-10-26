@@ -405,6 +405,17 @@
       },
       "enteredAt": "2026-10-26T16:17:28.691Z",
       "updatedAt": "2026-10-26T16:17:28.691Z"
+    },
+    {
+      "id": "62da0036-7601-4c12-ae2f-ced8d750db7d",
+      "name": "Palmitic Acid",
+      "category": "Chemicals",
+      "values": {
+        "stockConcentration": "10 mM",
+        "storage": "Yaqin's box, L5.226A -20 freezer"
+      },
+      "enteredAt": "2026-10-26T20:09:56.979Z",
+      "updatedAt": "2026-10-26T20:09:56.979Z"
     }
   ],
   "checkouts": [

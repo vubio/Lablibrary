@@ -147,10 +147,14 @@
       "name": "Phalloidin 488",
       "category": "Fluorescent probe",
       "values": {
-        "vendor": "Thermo"
+        "vendor": "Thermo",
+        "storage": "Yaqin's box, -80 freezer",
+        "stockConcentration": "400X",
+        "workingConcentration": "1X",
+        "source": "From Yanchao"
       },
       "enteredAt": "2026-10-23T04:58:45.000Z",
-      "updatedAt": "2026-10-23T04:58:45.000Z"
+      "updatedAt": "2026-10-26T03:00:47.489Z"
     },
     {
       "id": "initial-20261022-07",

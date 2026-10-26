@@ -361,12 +361,24 @@
       },
       "enteredAt": "2026-10-26T14:29:09.994Z",
       "updatedAt": "2026-10-26T14:29:09.994Z"
+    },
+    {
+      "id": "5c15a05b-836c-4511-8672-8ebf9c280f29",
+      "name": "HSC-T6",
+      "category": "Cell line",
+      "values": {
+        "origin": "Rat hepatic stellate cell",
+        "source": "Department",
+        "cellDensity": "30k",
+        "dishSize": "24-well"
+      },
+      "enteredAt": "2026-10-26T14:55:14.711Z",
+      "updatedAt": "2026-10-26T14:55:14.711Z"
     }
   ],
   "checkouts": [
     {
       "id": "4a94cf4b-09ff-40c4-8868-2e8dbc8abf53",
-      "createdAt": "2026-10-26T14:15:40.836Z",
       "name": "Experiment — Oct 27, 2026_Huh7 & HSC-T6 Viability",
       "selectedIds": [
         "initial-20261022-11",
@@ -411,11 +423,11 @@
           "enteredAt"
         ]
       },
+      "createdAt": "2026-10-26T14:15:40.836Z",
       "updatedAt": "2026-10-26T14:33:48.837Z"
     },
     {
       "id": "recovered-20261026-sv589-050a1e",
-      "createdAt": "2026-10-26T14:15:40.836Z",
       "name": "Experiment — Oct 26, 2026_SV589",
       "selectedIds": [
         "24cf3cdb-255c-4ded-9a26-30a3cb26d6f4",
@@ -460,11 +472,11 @@
           "enteredAt"
         ]
       },
+      "createdAt": "2026-10-26T14:15:40.836Z",
       "updatedAt": "2026-10-26T14:15:57.702Z"
     },
     {
       "id": "recovered-20261026-a549-f18f39",
-      "createdAt": "2026-10-26T14:15:40.836Z",
       "name": "Experiment — Oct 26, 2026_A549 & UBX8/GPX4 DKO",
       "selectedIds": [
         "initial-20261022-14",
@@ -514,6 +526,7 @@
           "enteredAt"
         ]
       },
+      "createdAt": "2026-10-26T14:15:40.836Z",
       "updatedAt": "2026-10-26T14:18:19.153Z"
     }
   ],

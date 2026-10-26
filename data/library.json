@@ -387,6 +387,22 @@
       },
       "enteredAt": "2026-10-26T15:15:43.741Z",
       "updatedAt": "2026-10-26T15:15:43.741Z"
+    },
+    {
+      "id": "74c54d09-1c77-48f8-90d2-c6eeb376d413",
+      "name": "SO3 PRDX3 (recombinant)",
+      "category": "1° antibody",
+      "values": {
+        "cloneName": "5H7c",
+        "host": "Rabbit",
+        "stockConcentration": "2.9 mg/mL",
+        "workingConcentration": "1:100",
+        "lotNumber": "1",
+        "source": "Department",
+        "storage": "Vu's box, -20 freezer"
+      },
+      "enteredAt": "2026-10-26T16:17:28.691Z",
+      "updatedAt": "2026-10-26T16:17:28.691Z"
     }
   ],
   "checkouts": [

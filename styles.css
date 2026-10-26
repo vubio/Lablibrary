@@ -58,3 +58,27 @@
   .picker-action-btn{font-size:9px;padding:4px 5px}
   .picker-versions{padding:5px 10px 9px 31px}
 }
+
+/* Compact version comparison: show only changed saved fields. */
+.picker-name-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.picker-name-line>span{min-width:0;overflow-wrap:anywhere}
+.picker-compare-btn{border:1px solid #cce9dc;border-radius:6px;background:#eef8f2;color:#087a62;font-weight:800;font-size:10px;line-height:1.2;padding:4px 7px;white-space:nowrap;flex:none}
+.picker-compare-btn:hover{border-color:#8bc6aa;background:#dbf1e6}
+.picker-compare-btn:focus-visible{outline:2px solid #108467;outline-offset:2px}
+.compare-modal{width:min(760px,calc(100% - 22px))}
+.compare-body{padding:20px 24px;max-height:62vh;overflow:auto}
+.compare-scroll{max-height:53vh;max-width:100%;overflow:auto;border:1px solid #e1ebe5;border-radius:8px}
+.compare-table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px;line-height:1.45}
+.compare-table th,.compare-table td{border-right:1px solid #e4eee8;border-bottom:1px solid #e4eee8;padding:10px 12px;text-align:left;vertical-align:top;white-space:normal;overflow-wrap:anywhere;min-width:120px;max-width:240px}
+.compare-table th:last-child,.compare-table td:last-child{border-right:0}
+.compare-table tbody tr:last-child th,.compare-table tbody tr:last-child td{border-bottom:0}
+.compare-table thead th{position:sticky;top:0;background:#eef6f1;color:#32604c;font-weight:800;font-size:11px;z-index:2}
+.compare-table th:first-child{position:sticky;left:0;min-width:144px;max-width:175px;box-shadow:1px 0 #d9e9df;z-index:1}
+.compare-table thead th:first-child{z-index:3}
+.compare-table tbody th{background:#f9fcfa;color:#285847}
+.compare-table tbody th strong{display:block;font-size:12px}
+.compare-table tbody th small{display:block;font-size:10px;font-weight:500;color:#849d91;margin-top:4px}
+.compare-table tbody td{background:white;color:#355b4c}
+.compare-empty{color:#a6b7af}
+.compare-identical{padding:18px;border:1px solid #e2ece5;border-radius:8px;color:#627e70;font-size:12px;background:#f9fcfa}
+@media(max-width:720px){.compare-body{padding:15px}.compare-table th,.compare-table td{padding:9px 10px;min-width:115px}.picker-compare-btn{font-size:9px;padding:4px 6px}}

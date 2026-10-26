@@ -281,12 +281,11 @@
       ]
     },
     "categoryOrder": [
-      "1° antibody",
-      "Assay reagent",
       "Cell line",
-      "Fixative",
+      "1° antibody",
       "Drug",
-      "Fluorescent probe"
+      "Fluorescent probe",
+      "2° antibody"
     ],
     "itemOrder": {
       "Fluorescent probe": [

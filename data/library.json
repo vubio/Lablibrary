@@ -290,6 +290,20 @@
       },
       "enteredAt": "2026-10-26T03:02:56.785Z",
       "updatedAt": "2026-10-26T03:03:26.932Z"
+    },
+    {
+      "id": "34833698-fc84-4a3b-a9d3-2d52a3a00984",
+      "name": "Paraformaldehyde",
+      "category": "Fixative",
+      "values": {
+        "stockConcentration": "16%",
+        "workingConcentration": "4%",
+        "catalogNumber": "12606",
+        "vendor": "Cell Signaling",
+        "storage": "RT"
+      },
+      "enteredAt": "2026-10-26T13:48:02.726Z",
+      "updatedAt": "2026-10-26T13:48:02.726Z"
     }
   ],
   "checkouts": [],

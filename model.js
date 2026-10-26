@@ -79,6 +79,18 @@ export function fieldOrder(db,category){
   return [...db.columns].sort((a,b)=>(score.get(b.id)||0)-(score.get(a.id)||0));
 }
 export function displayValue(item,id){if(id==='name')return item.name;if(id==='category')return item.category;if(id==='enteredAt')return formatTime(item.enteredAt);return String(item.values?.[id]??'');}
+// Compare versions using saved values, not timestamps: an automatic entry date
+// should identify a row, not count as a meaningful inventory-field change.
+export function differingVersionColumns(db,versions){
+  if(!Array.isArray(versions)||versions.length<2)return [];
+  const columns=[{id:'category',label:'Category'},...db.columns.filter(c=>!['name','category','enteredAt','updatedAt'].includes(c.id))];
+  const known=new Set(columns.map(c=>c.id));
+  for(const item of versions)for(const id of Object.keys(item.values||{})){
+    if(known.has(id)||['name','category','enteredAt','updatedAt'].includes(id))continue;
+    columns.push({id,label:id});known.add(id);
+  }
+  return columns.filter(c=>new Set(versions.map(item=>displayValue(item,c.id).trim())).size>1);
+}
 export function formatTime(value){const t=Date.parse(value);if(!Number.isFinite(t))return String(value||'');return new Date(t).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
 export function slug(s){return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,40)||'field';}
 export function addColumn(db,label){const clean=label.trim();const existing=db.columns.find(c=>c.label.toLocaleLowerCase()===clean.toLocaleLowerCase());if(existing)return existing;let id=slug(clean),n=2;while([...db.columns,...AUTO_COLUMNS].some(c=>c.id===id))id=`${slug(clean)}_${n++}`;const col={id,label:clean};db.columns.push(col);return col;}

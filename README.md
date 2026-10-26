@@ -12,6 +12,7 @@ A browser-based research inventory and experiment checkout at **https://vubio.gi
 - Remove a single material version directly in the lab-note preview via × beside its drag handle, without unchecking it in the picker; the control is excluded from clipboard output and updates only the working checkout until explicitly saved.
 - Filter checkout items instantly using category chips or the same category sidebar as the library. The picker offers Edit and + Version buttons for each item, plus individual Edit controls for earlier versions, using the existing library dialog.
 - Compare materials with multiple versions directly from the checkout picker. A compact popup shows every version but only fields whose saved values differ, using dates only to identify versions.
+- Click any **All materials** column heading to sort ascending/descending (including categories, numbers, and dates). Search/filter and expand items without losing the chosen sort. **Copy current view** exports the table in its displayed order, including expanded version rows, as plain TSV plus simple 11-point HTML; the Actions column is excluded.
 - Category-grouped lab-note tables, per-category remembered column choices, drag-to-order rows/tables, and smaller (9 pt) rich-text clipboard tables for OneNote.
 - CSV/TSV import, CSV export, and complete JSON backups.
 - GitHub API persistence for cross-device use, with browser-local drafts and safe detection of simultaneous conflicting edits.

@@ -149,13 +149,13 @@
       "category": "Fluorescent probe",
       "values": {
         "vendor": "Thermo",
-        "storage": "Yaqin's box, -80 freezer",
+        "storage": "Vu's box, -20° freezer",
         "stockConcentration": "400X",
         "workingConcentration": "1X",
         "source": "From Yanchao"
       },
       "enteredAt": "2026-10-23T04:58:45.000Z",
-      "updatedAt": "2026-10-26T03:00:47.489Z"
+      "updatedAt": "2026-10-26T13:58:48.261Z"
     },
     {
       "id": "initial-20261022-07",

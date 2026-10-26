@@ -1,7 +1,7 @@
 import {
   REPOSITORY,DATA_PATH,DEFAULT_COLUMNS,AUTO_COLUMNS,emptyDatabase,normalizeDatabase,
   makeId,keyFor,recentFirst,groupItems,fieldOrder,displayValue,formatTime,
-  addColumn,mergeDatabases,importRows,toCsv,toggleGroupSelection,toggleVersionSelection
+  addColumn,mergeDatabases,importRows,toCsv,toggleGroupSelection,toggleVersionSelection,differingVersionColumns
 } from './model.js';
 
 const $=id=>document.getElementById(id);
@@ -97,7 +97,8 @@ function renderPicker(){
     return `<div class="picker-group">
       <div class="picker-head">
         <input type="checkbox" data-check-group="${esc(g.key)}" ${checked?'checked':''} aria-label="${checked?'Remove all selected versions of':'Select newest version of'} ${esc(g.latest.name)}" title="${checked?'Uncheck to remove every selected version':'Select newest version'}" />
-        <div class="picker-title">${esc(g.latest.name)}
+        <div class="picker-title">
+          <div class="picker-name-line"><span>${esc(g.latest.name)}</span>${hasOld?`<button class="picker-compare-btn" type="button" data-compare-group="${esc(g.key)}" aria-label="Compare ${esc(g.latest.name)} versions" title="Show only fields that differ between versions">⇄ Compare</button>`:''}</div>
           <div class="picker-sub">${esc(g.latest.category)}${hasOld?` · ${g.items.length} versions`:''}${selectedCount?` · ${selectedCount} selected`:''}</div>
         </div>
         <div class="picker-actions">
@@ -119,6 +120,28 @@ function renderPicker(){
       }).join('')}</div>`:''}
     </div>`;
   }).join('')||'<div class="empty-preview"><p>No matching items.</p></div>';
+}
+function openCompareDialog(groupKey){
+  const group=allGroups().find(g=>g.key===groupKey);
+  if(!group||group.items.length<2)return;
+  const differing=differingVersionColumns(state.db,group.items);
+  $('compareDialogTitle').textContent='Compare · '+group.latest.name;
+  $('compareSummary').textContent=group.items.length+' versions · '+differing.length+
+    ' different field'+(differing.length===1?'':'s')+' (entry dates are shown only to identify versions)';
+  if(!differing.length){
+    $('compareContent').innerHTML='<div class="compare-identical">No differences in saved fields across these versions. Only their entry dates or record IDs differ.</div>';
+  }else{
+    $('compareContent').innerHTML=`<div class="compare-scroll"><table class="compare-table">
+      <thead><tr><th scope="col">Version</th>${differing.map(col=>`<th scope="col">${esc(col.label)}</th>`).join('')}</tr></thead>
+      <tbody>${group.items.map((it,index)=>`<tr>
+        <th scope="row"><strong>${index===0?'Newest':`Earlier ${index}`}</strong><small>${esc(formatTime(it.enteredAt))}</small></th>
+        ${differing.map(col=>{
+          const value=displayValue(it,col.id);
+          return `<td>${value.trim()?esc(value):'<span class="compare-empty">—</span>'}</td>`;
+        }).join('')}
+      </tr>`).join('')}</tbody></table></div>`;
+  }
+  openModal('compareDialog');
 }
 function selectedItems(){return [...state.selected].map(id=>state.db.items.find(it=>it.id===id)).filter(Boolean);}
 function orderedCategories(categories){const preferred=checkoutPreferences().categoryOrder;return [...categories].sort((a,b)=>{const ia=preferred.indexOf(a),ib=preferred.indexOf(b);return (ia<0?999:ia)-(ib<0?999:ib)||a.localeCompare(b);});}
@@ -403,6 +426,8 @@ function registerEvents(){
     if(event.target.matches('[data-choose-version]'))setVersionSelection(event.target.value,event.target.checked);
   });
   $('pickerList').addEventListener('click',event=>{
+    const compare=event.target.closest('[data-compare-group]');
+    if(compare){openCompareDialog(compare.dataset.compareGroup);return;}
     const edit=event.target.closest('[data-edit-picker]');
     if(edit){openItemDialog(itemById(edit.dataset.editPicker));return;}
     const copy=event.target.closest('[data-copy-picker]');

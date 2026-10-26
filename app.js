@@ -1,6 +1,6 @@
 import {
   REPOSITORY,DATA_PATH,DEFAULT_COLUMNS,AUTO_COLUMNS,emptyDatabase,normalizeDatabase,
-  makeId,keyFor,recentFirst,groupItems,fieldOrder,displayValue,formatTime,
+  makeId,keyFor,recentFirst,groupItems,fieldOrder,displayValue,formatTime,sortLibraryGroups,
   addColumn,mergeDatabases,importRows,toCsv,saveCheckoutRecord,toggleGroupSelection,toggleVersionSelection,differingVersionColumns
 } from './model.js';
 
@@ -8,7 +8,7 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const LOCAL_KEY='vubio-lablibrary-local-v1',TOKEN_KEY='vubio-lablibrary-token-session';
 const API=`https://api.github.com/repos/${REPOSITORY}/contents/${DATA_PATH}`;
-const state={db:emptyDatabase(),baseDb:emptyDatabase(),baseSha:null,dirty:false,revision:0,token:sessionStorage.getItem(TOKEN_KEY)||'',busy:false,networkError:'',currentPage:'library',selected:new Set(),expanded:new Set(),checkoutExpanded:new Set(),checkoutCategory:'',activeCheckoutId:null,checkoutPrefs:null,editingId:null,cloning:false,fieldDraft:{},syncTimer:null,toastTimer:null};
+const state={db:emptyDatabase(),baseDb:emptyDatabase(),baseSha:null,dirty:false,revision:0,token:sessionStorage.getItem(TOKEN_KEY)||'',busy:false,networkError:'',currentPage:'library',librarySort:{column:'name',direction:'asc'},selected:new Set(),expanded:new Set(),checkoutExpanded:new Set(),checkoutCategory:'',activeCheckoutId:null,checkoutPrefs:null,editingId:null,cloning:false,fieldDraft:{},syncTimer:null,toastTimer:null};
 
 function toast(message,error=false){const el=$('toast');el.textContent=message;el.classList.toggle('error',error);el.classList.remove('hidden');clearTimeout(state.toastTimer);state.toastTimer=setTimeout(()=>el.classList.add('hidden'),3600);}
 function setNotice(message='',danger=false){$('notice').textContent=message;$('notice').classList.toggle('hidden',!message);$('notice').classList.toggle('danger',danger);}
@@ -67,9 +67,14 @@ function ensureCheckoutPreferences(){
 
 function renderLibrary(){
   const term=$('librarySearch').value.trim().toLocaleLowerCase(),category=$('libraryCategory').value;
-  const matches=allGroups().filter(g=>g.items.some(it=>(!category||it.category===category)&&(!term||[it.name,it.category,...Object.values(it.values||{})].some(x=>String(x).toLocaleLowerCase().includes(term)))));
+  const matches=sortLibraryGroups(allGroups().filter(g=>g.items.some(it=>(!category||it.category===category)&&(!term||[it.name,it.category,...Object.values(it.values||{})].some(x=>String(x).toLocaleLowerCase().includes(term))))),state.librarySort.column,state.librarySort.direction);
   const cols=[AUTO_COLUMNS[0],AUTO_COLUMNS[1],...(category?fieldOrder(state.db,category):state.db.columns),AUTO_COLUMNS[2]];
-  const table=$('libraryTable');table.querySelector('thead').innerHTML=`<tr>${cols.map(c=>`<th>${esc(c.label)}</th>`).join('')}<th>Actions</th></tr>`;
+  const table=$('libraryTable'),scroller=table.closest('.table-scroll'),scrollLeft=scroller?.scrollLeft||0;
+  table.querySelector('thead').innerHTML=`<tr>${cols.map(c=>{
+    const active=state.librarySort.column===c.id;
+    const direction=state.librarySort.direction;
+    return `<th scope="col" data-col-id="${esc(c.id)}" aria-sort="${active?(direction==='asc'?'ascending':'descending'):'none'}"><button type="button" class="library-sort-button ${active?'active':''}" data-sort-column="${esc(c.id)}" title="Sort by ${esc(c.label)}${active?' (click to reverse)':''}"><span>${esc(c.label)}</span><span class="sort-indicator" aria-hidden="true">${active?(direction==='asc'?'▲':'▼'):'↕'}</span></button></th>`;
+  }).join('')}<th scope="col">Actions</th></tr>`;
   table.querySelector('tbody').innerHTML=matches.map(g=>{
     const chosen=g.items.find(it=>(!category||it.category===category)&&(!term||[it.name,it.category,...Object.values(it.values||{})].some(x=>String(x).toLocaleLowerCase().includes(term))))||g.latest;
     const latest=g.latest;const expanded=state.expanded.has(g.key);const multi=g.items.length>1;
@@ -77,6 +82,7 @@ function renderLibrary(){
     if(expanded)body+=g.items.slice(1).map(it=>renderLibraryRow(it,cols,null,true,false)).join('');
     return body;
   }).join('');
+  if(scroller)scroller.scrollLeft=scrollLeft;
   const noRecords=state.db.items.length===0;$('emptyLibrary').classList.toggle('hidden',!noRecords);table.classList.toggle('hidden',noRecords);
   $('libraryFootnote').textContent=`Showing ${matches.length} unique item${matches.length===1?'':'s'} · ${state.db.items.length} total records`;
 }
@@ -317,6 +323,37 @@ function onDrop(event){if(!dragging)return;event.preventDefault();
 }
 function onDragEnd(){dragging=null;document.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging'));}
 
+// Export exactly the rendered library view: active search/category filter, sort
+// order, and any expanded versions. Exclude the sticky Actions column.
+function libraryViewCopyData(){
+  const table=$('libraryTable');
+  const columns=[...table.querySelectorAll('thead th[data-col-id]')]
+    .map(th=>({id:th.dataset.colId,label:th.querySelector('button span')?.textContent?.trim()||''}));
+  const records=[...table.querySelectorAll('tbody tr[data-row-id]')]
+    .map(tr=>itemById(tr.dataset.rowId)).filter(Boolean);
+  const clean=v=>String(v??'').replace(/[\t\r\n]+/g,' ').trim();
+  const rows=records.map(item=>columns.map(col=>clean(displayValue(item,col.id))));
+  const plain=[columns.map(c=>clean(c.label)).join('\t'),...rows.map(values=>values.join('\t'))].join('\n');
+  const html=`<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:11pt;color:#222">
+    <thead><tr>${columns.map(c=>`<th style="border:1px solid #ccc;padding:5px 7px;font-weight:bold;text-align:left;background:#f3f3f3">${esc(c.label)}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(values=>`<tr>${values.map(v=>`<td style="border:1px solid #ddd;padding:4px 7px;vertical-align:top">${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  return {plain,html,count:records.length};
+}
+async function copyLibraryView(){
+  const {plain,html,count}=libraryViewCopyData();
+  if(!count){toast('No library rows to copy in this view.',true);return;}
+  try{
+    if(navigator.clipboard?.write&&typeof ClipboardItem!=='undefined')
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/plain':new Blob([plain],{type:'text/plain'}),
+        'text/html':new Blob([html],{type:'text/html'})
+      })]);
+    else if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(plain);
+    else throw new Error('Clipboard is not available in this browser');
+    toast(`Copied ${count} visible row${count===1?'':'s'} in the current order. Paste into OneNote, Word, or Excel.`);
+  }catch(err){toast(`Could not copy library table: ${err.message}`,true);}
+}
+
 function cleanCheckoutHtml(){
   const cards=[...document.querySelectorAll('#checkoutPreview .checkout-card')];const htmlParts=[],plainParts=[];
   for(const card of cards){
@@ -422,6 +459,16 @@ function registerEvents(){
     if(state.currentPage==='checkout'){state.checkoutCategory=btn.dataset.filterCategory;renderPicker();renderCategories();}
     else{$('libraryCategory').value=btn.dataset.filterCategory;renderCategories();renderLibrary();}
   });
+  $('libraryTable').querySelector('thead').addEventListener('click',event=>{
+    const button=event.target.closest('[data-sort-column]');
+    if(!button)return;
+    const col=button.dataset.sortColumn;
+    state.librarySort=state.librarySort.column===col
+      ?{column:col,direction:state.librarySort.direction==='asc'?'desc':'asc'}
+      :{column:col,direction:'asc'};
+    renderLibrary();
+  });
+  $('copyLibraryView').addEventListener('click',copyLibraryView);
   $('libraryTable').addEventListener('click',event=>{
     const toggle=event.target.closest('[data-expand]');if(toggle){const key=toggle.dataset.expand;if(state.expanded.has(key))state.expanded.delete(key);else state.expanded.add(key);renderLibrary();return;}
     const version=event.target.closest('[data-copy-version]');if(version){openItemDialog(itemById(version.dataset.copyVersion),true);return;}

@@ -44,6 +44,26 @@ export function normalizeDatabase(input){
 export function uniqueBy(items,getKey){const seen=new Set();return items.filter(x=>{const k=getKey(x);if(seen.has(k))return false;seen.add(k);return true;});}
 export function makeId(){return globalThis.crypto?.randomUUID?.() || `row_${Date.now()}_${Math.random().toString(36).slice(2)}`;}
 export function keyFor(name){return String(name||'').trim().replace(/\s+/g,' ').toLocaleLowerCase();}
+// The checkout may contain multiple versions of one material.
+// Ticking a material initially selects its newest version; individual version
+// toggles then add or remove exactly that version without altering the others.
+export function toggleGroupSelection(selectedIds, versionIds, checked){
+  const next=new Set(selectedIds);
+  if(!Array.isArray(versionIds)||!versionIds.length)return next;
+  if(checked){
+    // First id belongs to the newest version (groupItems sorts newest first).
+    if(!versionIds.some(id=>next.has(id)))next.add(versionIds[0]);
+  }else{
+    for(const id of versionIds)next.delete(id);
+  }
+  return next;
+}
+export function toggleVersionSelection(selectedIds, versionId, checked){
+  const next=new Set(selectedIds);
+  if(checked)next.add(versionId);
+  else next.delete(versionId);
+  return next;
+}
 export function recentFirst(a,b){return (Date.parse(b.enteredAt)||0)-(Date.parse(a.enteredAt)||0)||String(b.id).localeCompare(String(a.id));}
 export function groupItems(items){
   const groups=new Map();

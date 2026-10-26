@@ -90,3 +90,12 @@
 .preview-remove-item{border:1px solid #f0d8d8;background:#fff8f8;color:#a04848;border-radius:5px;font-size:15px;font-weight:700;line-height:1.1;width:24px;height:25px;padding:0;display:grid;place-items:center;cursor:pointer}
 .preview-remove-item:hover{background:#fdeaea;border-color:#dca8a8;color:#922f2f}
 .preview-remove-item:focus-visible{outline:2px solid #bd5555;outline-offset:2px}
+
+/* Click-to-sort column headings and compact inventory copy action. */
+.library-sort-button{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:0;border:0;background:transparent;color:inherit;text-align:left;font-size:inherit;font-weight:inherit;letter-spacing:inherit;cursor:pointer}
+.library-sort-button:hover,.library-sort-button.active{color:#087965}
+.library-sort-button:focus-visible{outline:2px solid #0c9171;outline-offset:5px;border-radius:2px}
+.sort-indicator{font-size:10px;color:#b6c8be;line-height:1;flex:none}
+.library-sort-button:hover .sort-indicator,.library-sort-button.active .sort-indicator{color:#087965}
+.copy-library-view{min-height:40px;font-size:11px;align-self:center}
+@media(max-width:720px){.copy-library-view{flex:1}.panel-header .tools{align-items:stretch}.panel-header .tools .searchbox{flex:1}}

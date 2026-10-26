@@ -18,7 +18,8 @@
     "Transfection reagent",
     "Other chemical",
     "Drug",
-    "Others"
+    "Others",
+    "Chemicals"
   ],
   "columns": [
     {
@@ -256,7 +257,7 @@
     {
       "id": "initial-20261022-13",
       "name": "Arachidonic Acid",
-      "category": "Drug",
+      "category": "Chemicals",
       "values": {
         "source": "From Yanchao",
         "storage": "Vu's box, -20 freezer",
@@ -264,7 +265,7 @@
         "workingConcentration": "50 & 100 µM in 10 BSA% in 0.9% NaCl"
       },
       "enteredAt": "2026-10-23T04:58:52.000Z",
-      "updatedAt": "2026-10-26T14:32:29.614Z"
+      "updatedAt": "2026-10-26T19:19:41.488Z"
     },
     {
       "id": "initial-20261022-14",
@@ -379,7 +380,7 @@
     {
       "id": "e50d8df2-16e0-4977-9517-81a2a54c5dee",
       "name": "Retinol",
-      "category": "Drug",
+      "category": "Chemicals",
       "values": {
         "stockConcentration": "10 mM in DMSO",
         "catalogNumber": "R7632-25MG",
@@ -387,7 +388,7 @@
         "storage": "Vu's box, -20 freezer"
       },
       "enteredAt": "2026-10-26T15:15:43.741Z",
-      "updatedAt": "2026-10-26T15:15:43.741Z"
+      "updatedAt": "2026-10-26T19:19:45.052Z"
     },
     {
       "id": "74c54d09-1c77-48f8-90d2-c6eeb376d413",

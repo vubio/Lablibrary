@@ -179,10 +179,11 @@
       "values": {
         "cellLineCode": "CCL-185 (WT)",
         "origin": "Human alveolar basal epithelial carcinoma",
-        "source": "Department"
+        "source": "Department",
+        "dishSize": "35-mm (MatTek glass bottom)"
       },
       "enteredAt": "2026-10-23T04:58:47.000Z",
-      "updatedAt": "2026-10-23T04:58:47.000Z"
+      "updatedAt": "2026-10-26T03:02:26.119Z"
     },
     {
       "id": "initial-20261022-09",

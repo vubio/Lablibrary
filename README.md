@@ -8,7 +8,8 @@ A browser-based research inventory and experiment checkout at **https://vubio.gi
 - Category-aware field ordering and suggestions from previous items.
 - Click-to-edit table cells, custom fields, versioning by case-insensitive item name, and collapsed histories.
 - Experiment checkout defaults to the newest version, with independent checkboxes for selecting additional or older versions of the same material. The main item checkbox clears all its selected versions when unchecked.
-- Save named draft experiment checkouts in the GitHub JSON database, reopen/update/delete them, and clear the current checkout without deleting saved plans.
+- **Save as new** always creates a separate named experiment record; **Update opened** explicitly overwrites only the currently open saved experiment. Open, update, or delete saved plans without affecting inventory rows.
+- Remove a single material version directly in the lab-note preview via × beside its drag handle, without unchecking it in the picker; the control is excluded from clipboard output and updates only the working checkout until explicitly saved.
 - Filter checkout items instantly using category chips or the same category sidebar as the library. The picker offers Edit and + Version buttons for each item, plus individual Edit controls for earlier versions, using the existing library dialog.
 - Compare materials with multiple versions directly from the checkout picker. A compact popup shows every version but only fields whose saved values differ, using dates only to identify versions.
 - Category-grouped lab-note tables, per-category remembered column choices, drag-to-order rows/tables, and smaller (9 pt) rich-text clipboard tables for OneNote.

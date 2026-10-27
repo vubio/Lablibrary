@@ -85,6 +85,10 @@
     {
       "id": "dishSize",
       "label": "Size of dish"
+    },
+    {
+      "id": "reconstitution",
+      "label": "Reconstitution"
     }
   ],
   "items": [
@@ -431,6 +435,20 @@
       },
       "enteredAt": "2026-10-27T17:06:18.512Z",
       "updatedAt": "2026-10-27T17:06:18.512Z"
+    },
+    {
+      "id": "59bcf510-3e44-4e63-a05f-c2ddf7674e8b",
+      "name": "PBS (powder)",
+      "category": "Chemicals",
+      "values": {
+        "catalogNumber": "P4417-100TAB",
+        "lotNumber": "0000528488",
+        "vendor": "Millipore Sigma",
+        "source": "From Yanchao",
+        "reconstitution": "water: 1 tablet/200 mL"
+      },
+      "enteredAt": "2026-10-27T21:40:15.259Z",
+      "updatedAt": "2026-10-27T21:43:23.070Z"
     }
   ],
   "checkouts": [

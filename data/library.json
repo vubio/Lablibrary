@@ -193,10 +193,12 @@
         "origin": "Human alveolar basal epithelial carcinoma",
         "source": "Department",
         "dishSize": "35-mm (MatTek glass bottom)",
-        "cellDensity": "100k"
+        "cellDensity": "100k",
+        "incubator": "8.8% CO2, 37℃",
+        "media": "DMEM-High glucose, 5% FCS, P/S"
       },
       "enteredAt": "2026-10-23T04:58:47.000Z",
-      "updatedAt": "2026-10-26T16:29:28.389Z"
+      "updatedAt": "2026-10-27T16:51:57.859Z"
     },
     {
       "id": "initial-20261022-09",
@@ -207,10 +209,12 @@
         "origin": "Human alveolar basal epithelial carcinoma",
         "source": "Department",
         "cellDensity": "100k",
-        "dishSize": "35-mm (MatTek glass bottom)"
+        "dishSize": "35-mm (MatTek glass bottom)",
+        "incubator": "8.8% CO2, 37℃",
+        "media": "DMEM-High glucose, 5% FCS, P/S"
       },
       "enteredAt": "2026-10-23T04:58:48.000Z",
-      "updatedAt": "2026-10-26T16:29:53.563Z"
+      "updatedAt": "2026-10-27T16:51:55.837Z"
     },
     {
       "id": "initial-20261022-10",

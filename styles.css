@@ -99,3 +99,34 @@
 .library-sort-button:hover .sort-indicator,.library-sort-button.active .sort-indicator{color:#087965}
 .copy-library-view{min-height:40px;font-size:11px;align-self:center}
 @media(max-width:720px){.copy-library-view{flex:1}.panel-header .tools{align-items:stretch}.panel-header .tools .searchbox{flex:1}}
+
+
+/* Keep GitHub sync/status actions within the viewport as the main page scrolls.
+   The category list scrolls independently when it exceeds the remaining height. */
+@media(min-width:721px){
+  .sidebar{
+    position:sticky;
+    top:0;
+    align-self:flex-start;
+    height:100vh;
+    height:100dvh;
+    min-height:0;
+    max-height:100dvh;
+    overflow:hidden;
+  }
+  .sidebar .category-nav{
+    flex:1 1 auto;
+    min-height:0;
+    max-height:none;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+  }
+  .sidebar-bottom{
+    flex:0 0 auto;
+    margin-top:auto;
+    background:#fff;
+  }
+  .sidebar>.brand,.sidebar>nav,.sidebar>.sidebar-label,.sidebar>.quiet-link{
+    flex-shrink:0;
+  }
+}

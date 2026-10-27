@@ -420,6 +420,17 @@
       },
       "enteredAt": "2026-10-26T20:09:56.979Z",
       "updatedAt": "2026-10-26T20:53:23.105Z"
+    },
+    {
+      "id": "8fd4e5e4-584e-44ad-aeca-db25af6b5779",
+      "name": "ThiolTracker™ Violet",
+      "category": "Fluorescent probe",
+      "values": {
+        "catalogNumber": "T10095",
+        "vendor": "Thermo"
+      },
+      "enteredAt": "2026-10-27T17:06:18.512Z",
+      "updatedAt": "2026-10-27T17:06:18.512Z"
     }
   ],
   "checkouts": [

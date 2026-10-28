@@ -6,9 +6,20 @@ import {
 
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const LOCAL_KEY='vubio-lablibrary-local-v1',TOKEN_KEY='vubio-lablibrary-token-session';
+const LOCAL_KEY='vubio-lablibrary-local-v1',TOKEN_KEY='vubio-lablibrary-token-session',
+  REMEMBERED_TOKEN_KEY='vubio-lablibrary-token-device-v1';
+function readRememberedToken(){try{return localStorage.getItem(REMEMBERED_TOKEN_KEY)||'';}catch{return '';}}
+function rememberGithubToken(token,remember){
+  try{
+    if(remember)localStorage.setItem(REMEMBERED_TOKEN_KEY,token);
+    else localStorage.removeItem(REMEMBERED_TOKEN_KEY);
+    return true;
+  }catch{return !remember;}
+}
+function forgetRememberedToken(){try{localStorage.removeItem(REMEMBERED_TOKEN_KEY);}catch{}}
+
 const API=`https://api.github.com/repos/${REPOSITORY}/contents/${DATA_PATH}`;
-const state={db:emptyDatabase(),baseDb:emptyDatabase(),baseSha:null,dirty:false,revision:0,token:sessionStorage.getItem(TOKEN_KEY)||'',busy:false,networkError:'',currentPage:'library',librarySort:{column:'name',direction:'asc'},selected:new Set(),expanded:new Set(),checkoutExpanded:new Set(),checkoutCategory:'',activeCheckoutId:null,checkoutPrefs:null,editingId:null,cloning:false,fieldDraft:{},syncTimer:null,toastTimer:null};
+const state={db:emptyDatabase(),baseDb:emptyDatabase(),baseSha:null,dirty:false,revision:0,token:sessionStorage.getItem(TOKEN_KEY)||readRememberedToken(),busy:false,networkError:'',currentPage:'library',librarySort:{column:'name',direction:'asc'},selected:new Set(),expanded:new Set(),checkoutExpanded:new Set(),checkoutCategory:'',activeCheckoutId:null,checkoutPrefs:null,editingId:null,cloning:false,fieldDraft:{},syncTimer:null,toastTimer:null};
 
 function toast(message,error=false){const el=$('toast');el.textContent=message;el.classList.toggle('error',error);el.classList.remove('hidden');clearTimeout(state.toastTimer);state.toastTimer=setTimeout(()=>el.classList.add('hidden'),3600);}
 function setNotice(message='',danger=false){$('notice').textContent=message;$('notice').classList.toggle('hidden',!message);$('notice').classList.toggle('danger',danger);}
@@ -525,13 +536,51 @@ function registerEvents(){
   document.querySelectorAll('[data-format]').forEach(btn=>{btn.addEventListener('mousedown',event=>event.preventDefault());btn.addEventListener('click',()=>document.execCommand(btn.dataset.format,false,btn.dataset.value||null));});
   $('clearFormat').addEventListener('mousedown',event=>event.preventDefault());$('clearFormat').addEventListener('click',()=>document.execCommand('removeFormat',false,null));
   $('copyCheckout').addEventListener('click',copyCheckout);$('copyBottom').addEventListener('click',copyCheckout);
-  const openGithubConnection=()=>{openModal('connectDialog');$('tokenInput').value=state.token;};
+  const openGithubConnection=()=>{
+    $('tokenInput').value=state.token;
+    $('rememberGithubToken').checked=!!readRememberedToken();
+    $('connectionMessage').textContent='';
+    openModal('connectDialog');
+  };
   $('connectBtn').addEventListener('click',openGithubConnection);
   $('syncGuideConnect').addEventListener('click',openGithubConnection);
-  $('connectForm').addEventListener('submit',async event=>{event.preventDefault();const token=$('tokenInput').value.trim();if(!token){$('connectionMessage').textContent='Enter a fine-grained token to connect.';return;}
-    state.token=token;try{await githubRequest(`https://api.github.com/repos/${REPOSITORY}`);sessionStorage.setItem(TOKEN_KEY,token);$('connectionMessage').textContent='Connected. Your token is available only in this tab session.';closeModal('connectDialog');state.networkError='';if(!state.dirty)setNotice('');refreshSyncStatus();toast('Token accepted for reading. Checking GitHub write access when saving.');if(state.dirty)syncNow();}catch(err){state.token='';$('connectionMessage').textContent=`Could not connect: ${err.message}`;}
+  $('connectForm').addEventListener('submit',async event=>{
+    event.preventDefault();
+    const token=$('tokenInput').value.trim(),remember=$('rememberGithubToken').checked;
+    if(!token){$('connectionMessage').textContent='Enter a fine-grained token to connect.';return;}
+    const previous=state.token;
+    state.token=token;
+    try{
+      await githubRequest(`https://api.github.com/repos/${REPOSITORY}`);
+      sessionStorage.setItem(TOKEN_KEY,token);
+      const stored=rememberGithubToken(token,remember);
+      closeModal('connectDialog');
+      state.networkError='';
+      if(!state.dirty)setNotice('');
+      refreshSyncStatus();
+      if(remember&&!stored){
+        toast('Connected for this session. Browser settings prevented remembering the token.',true);
+      }else if(remember){
+        toast('GitHub connected and remembered on this device. Upload access will be checked on save.');
+      }else{
+        toast('GitHub connected for this browser session only.');
+      }
+      if(state.dirty)syncNow();
+    }catch(err){
+      state.token=previous;
+      $('connectionMessage').textContent=`Could not connect: ${err.message}`;
+    }
   });
-  $('disconnectBtn').addEventListener('click',()=>{state.token='';sessionStorage.removeItem(TOKEN_KEY);$('tokenInput').value='';$('connectionMessage').textContent='Token forgotten for this browser session.';refreshSyncStatus();toast('Token removed from this session.');});
+  $('disconnectBtn').addEventListener('click',()=>{
+    state.token='';
+    sessionStorage.removeItem(TOKEN_KEY);
+    forgetRememberedToken();
+    $('tokenInput').value='';
+    $('rememberGithubToken').checked=false;
+    $('connectionMessage').textContent='Token forgotten from this browser. Reconnect to upload future edits.';
+    refreshSyncStatus();
+    toast('GitHub token removed from this browser.');
+  });
   $('saveBtn').addEventListener('click',syncNow);
   $('backupBtn').addEventListener('click',()=>openModal('backupDialog'));
   $('exportJson').addEventListener('click',()=>download(`LabLibrary_backup_${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(state.db,null,2),'application/json'));

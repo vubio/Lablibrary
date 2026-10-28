@@ -381,10 +381,11 @@
         "origin": "Rat hepatic stellate cell",
         "source": "Department",
         "cellDensity": "30k",
-        "dishSize": "24-well"
+        "dishSize": "24-well",
+        "media": "DMEM-Low glucose, 10% FCS, P/S"
       },
       "enteredAt": "2026-10-26T14:55:14.711Z",
-      "updatedAt": "2026-10-26T14:55:14.711Z"
+      "updatedAt": "2026-10-28T20:50:51.544Z"
     },
     {
       "id": "e50d8df2-16e0-4977-9517-81a2a54c5dee",

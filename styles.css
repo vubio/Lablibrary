@@ -130,3 +130,12 @@
     flex-shrink:0;
   }
 }
+
+
+/* Optional per-device GitHub sign-in persistence. */
+.remember-token-choice{display:flex;align-items:flex-start;gap:11px;margin:16px 0 8px;padding:12px;border:1px solid #dde9e1;background:#f8fbf9;border-radius:9px;cursor:pointer}
+.remember-token-choice input{margin:3px 0 0;flex:0 0 auto;width:16px;height:16px;accent-color:#13866b}
+.remember-token-choice span{min-width:0}
+.remember-token-choice strong{display:block;color:#244c3e;font-size:12px}
+.remember-token-choice small{display:block;color:#758e82;font-size:11px;line-height:1.55;margin-top:4px}
+.remember-token-choice:focus-within{outline:2px solid #7fbda5;outline-offset:2px}

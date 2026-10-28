@@ -324,10 +324,11 @@
         "workingConcentration": "4% in PBS",
         "catalogNumber": "12606",
         "vendor": "Cell Signaling",
-        "storage": "RT"
+        "storage": "RT",
+        "lotNumber": "48"
       },
       "enteredAt": "2026-10-26T13:48:02.726Z",
-      "updatedAt": "2026-10-26T13:49:08.497Z"
+      "updatedAt": "2026-10-28T12:23:00.118Z"
     },
     {
       "id": "95c626f5-d563-41d3-8a35-7d82673b3343",

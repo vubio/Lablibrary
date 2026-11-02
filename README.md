@@ -5,7 +5,7 @@ A browser-based research inventory and experiment checkout at **https://vubio.gi
 ## What it does
 
 - One shared schema for cell lines, antibodies, probes, chemicals, and custom categories.
-- Category-aware field ordering and suggestions from previous items.
+- Category-aware field ordering and a clickable ▾ picker beside every detail field. The menu offers all distinct previously used values (not just the first 15), prioritizes values from the selected category, includes alternatives from other categories, supports typing to filter, and works with arrow keys. New values remain free-form.
 - Click-to-edit table cells, custom fields, versioning by case-insensitive item name, and collapsed histories.
 - Experiment checkout defaults to the newest version, with independent checkboxes for selecting additional or older versions of the same material. The main item checkbox clears all its selected versions when unchecked.
 - **Save as new** always creates a separate named experiment record; **Update opened** explicitly overwrites only the currently open saved experiment. Open, update, or delete saved plans without affecting inventory rows.

@@ -139,3 +139,19 @@
 .remember-token-choice strong{display:block;color:#244c3e;font-size:12px}
 .remember-token-choice small{display:block;color:#758e82;font-size:11px;line-height:1.55;margin-top:4px}
 .remember-token-choice:focus-within{outline:2px solid #7fbda5;outline-offset:2px}
+
+
+/* Clickable, searchable reuse of values from the full entry history. */
+.field-input-wrap{position:relative;display:flex;align-items:stretch;min-width:0}
+.form-field .field-input-wrap input{padding-right:43px;min-width:0}
+.field-suggest-toggle{position:absolute;right:4px;top:4px;bottom:4px;width:35px;border:0;border-left:1px solid #e4ece7;background:transparent;color:#3d7f6a;font-weight:800;font-size:19px;border-radius:0 6px 6px 0;display:grid;place-items:center;cursor:pointer}
+.field-suggest-toggle:hover:not(:disabled){background:#e6f6ed;color:#0c735e}
+.field-suggest-toggle:focus-visible{outline:2px solid #2b9d7b;outline-offset:1px}
+.field-suggest-toggle:disabled{opacity:.32;cursor:default}
+.field-suggestion-menu{position:fixed;z-index:9999;box-sizing:border-box;max-height:min(280px,45vh);overflow-y:auto;overscroll-behavior:contain;border:1px solid #c7dfd2;background:#fff;border-radius:9px;box-shadow:0 14px 36px #1a49302d;padding:4px;scrollbar-width:thin}
+.field-suggestion-heading{font-size:10px;color:#6d9280;font-weight:800;letter-spacing:.25px;padding:8px 10px 5px;background:#f3f9f5;border-radius:5px;margin-top:3px;position:sticky;top:0;z-index:1}
+.field-suggestion-option{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:33px;white-space:normal;overflow-wrap:anywhere;text-align:left;padding:7px 10px;background:#fff;color:#2d5041;border:0;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+.field-suggestion-option small{font-size:10px;color:#8ea69a;font-weight:500;white-space:nowrap}
+.field-suggestion-option:hover,.field-suggestion-option.active{background:#eaf6ee;color:#0b765c}
+.field-suggestion-option:focus-visible{outline:2px solid #0c9075}
+.field-suggestion-empty{padding:14px 12px;font-size:11px;font-weight:500;color:#80958a;line-height:1.5}

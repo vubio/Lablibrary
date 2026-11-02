@@ -504,6 +504,19 @@
       },
       "enteredAt": "2026-11-02T16:22:35.382Z",
       "updatedAt": "2026-11-02T16:22:35.382Z"
+    },
+    {
+      "id": "58fb9c25-0268-4c21-a44a-5bb9fef970ff",
+      "name": "Arachidonic Acid",
+      "category": "Chemicals",
+      "values": {
+        "source": "From Yaqin's box",
+        "storage": "Vu's box, -20 freezer",
+        "stockConcentration": "10 mM",
+        "workingConcentration": "0 - 100 µM in 10 BSA% in 0.9% NaCl"
+      },
+      "enteredAt": "2026-11-02T16:24:51.696Z",
+      "updatedAt": "2026-11-02T16:24:51.696Z"
     }
   ],
   "checkouts": [

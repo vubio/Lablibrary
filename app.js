@@ -333,7 +333,7 @@ function showFieldSuggestions(input,fieldId,{all=false}={}){
     ?`${current.length?`<div class="field-suggestion-heading">${fieldId==='__category__'?'Available categories':`Used in ${esc(category||'this category')}`} · ${current.length}</div>${optionRows(current)}`:''}
        ${other.length?`<div class="field-suggestion-heading">Other categories · ${other.length}</div>${optionRows(other)}`:''}`
     :'<div class="field-suggestion-empty">No matching saved values. You can type a new one.</div>';
-  const rect=input.parentElement.getBoundingClientRect(),modal=$('itemDialog').getBoundingClientRect();
+  const rect=input.parentElement.getBoundingClientRect();
   const availableWidth=Math.max(180,Math.min(440,window.innerWidth-24));
   const width=Math.min(availableWidth,Math.max(220,rect.width));
   const left=Math.max(12,Math.min(rect.left,window.innerWidth-width-12));
@@ -610,6 +610,7 @@ function registerEvents(){
     const input=id==='__category__' ?$('itemCategory'):$('itemFields').querySelector('[data-form-col="'+CSS.escape(id)+'"]');
     if(activeFieldSuggestion?.input===input){closeFieldSuggestions();return;}
     showFieldSuggestions(input,id,{all:true});
+    input.focus({preventScroll:true});
   });
   $('itemForm').addEventListener('input',event=>{
     const input=event.target;

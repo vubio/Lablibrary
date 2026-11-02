@@ -89,6 +89,10 @@
     {
       "id": "reconstitution",
       "label": "Reconstitution"
+    },
+    {
+      "id": "no_of_dishes",
+      "label": "No. of Dishes"
     }
   ],
   "items": [
@@ -453,6 +457,21 @@
       },
       "enteredAt": "2026-10-27T21:40:15.259Z",
       "updatedAt": "2026-10-27T21:43:23.070Z"
+    },
+    {
+      "id": "42a500a3-bc2f-49ba-b780-afd8ab3da1a1",
+      "name": "HSC-T6",
+      "category": "Cell line",
+      "values": {
+        "origin": "Rat hepatic stellate cell",
+        "source": "Department",
+        "cellDensity": "5k",
+        "dishSize": "96-well",
+        "media": "DMEM-Low glucose, 10% FCS, P/S",
+        "no_of_dishes": "1"
+      },
+      "enteredAt": "2026-11-02T16:08:27.202Z",
+      "updatedAt": "2026-11-02T16:08:27.202Z"
     }
   ],
   "checkouts": [

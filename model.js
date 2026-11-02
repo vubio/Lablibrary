@@ -106,7 +106,7 @@ export function fieldValueSuggestions(items,columnId,category='',query=''){
     if(raw==null)continue;
     const value=String(raw).trim();
     if(!value)continue;
-    const normalized=value.replace(/\\s+/g,' ').toLocaleLowerCase();
+    const normalized=value.replace(/\s+/g,' ').toLocaleLowerCase();
     const inCategory=String(item.category||'').trim().toLocaleLowerCase()===categoryKey;
     let entry=values.get(normalized);
     if(!entry){

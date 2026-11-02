@@ -647,8 +647,7 @@
     "excludedColumns": {
       "Cell line": [
         "enteredAt",
-        "source",
-        "origin"
+        "source"
       ],
       "1° antibody": [
         "enteredAt"

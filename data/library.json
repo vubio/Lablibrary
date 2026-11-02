@@ -374,10 +374,11 @@
         "cellDensity": "5k",
         "dishSize": "96-well",
         "origin": "Human hepatocellular carcinoma",
-        "source": "Department"
+        "source": "Department",
+        "no_of_dishes": "1"
       },
       "enteredAt": "2026-10-26T14:29:09.994Z",
-      "updatedAt": "2026-11-02T16:21:34.481Z"
+      "updatedAt": "2026-11-02T16:22:24.703Z"
     },
     {
       "id": "5c15a05b-836c-4511-8672-8ebf9c280f29",

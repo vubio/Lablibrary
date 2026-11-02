@@ -371,13 +371,13 @@
       "values": {
         "media": "DMEM-High glucose, 5% FCS, P/S",
         "incubator": "5% CO2, 37℃",
-        "cellDensity": "1k & 5k",
+        "cellDensity": "5k",
         "dishSize": "96-well",
         "origin": "Human hepatocellular carcinoma",
         "source": "Department"
       },
       "enteredAt": "2026-10-26T14:29:09.994Z",
-      "updatedAt": "2026-10-26T14:29:09.994Z"
+      "updatedAt": "2026-11-02T16:21:34.481Z"
     },
     {
       "id": "5c15a05b-836c-4511-8672-8ebf9c280f29",

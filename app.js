@@ -1,6 +1,6 @@
 import {
   REPOSITORY,DATA_PATH,DEFAULT_COLUMNS,AUTO_COLUMNS,emptyDatabase,normalizeDatabase,
-  makeId,keyFor,recentFirst,groupItems,fieldOrder,displayValue,formatTime,sortLibraryGroups,
+  makeId,keyFor,recentFirst,groupItems,fieldOrder,fieldValueSuggestions,displayValue,formatTime,sortLibraryGroups,
   addColumn,mergeDatabases,importRows,toCsv,saveCheckoutRecord,toggleGroupSelection,toggleVersionSelection,differingVersionColumns
 } from './model.js';
 
@@ -248,14 +248,126 @@ function closeModal(id){$(id).close();}
 function itemById(id){return state.db.items.find(x=>x.id===id);}
 function collectFields(){const values={...state.fieldDraft};$('itemFields').querySelectorAll('[data-form-col]').forEach(input=>{values[input.dataset.formCol]=input.value;});return values;}
 function renderItemFields(){
-  const category=$('itemCategory').value.trim(),cols=fieldOrder(state.db,category),existing=state.db.items.filter(it=>it.category.toLowerCase()===category.toLowerCase());
-  $('smartHint').textContent=existing.length?`${existing.length} earlier entr${existing.length===1?'y':'ies'} · frequently used fields first`:'All fields available for this new category';
+  const category=$('itemCategory').value.trim(),cols=fieldOrder(state.db,category),
+    existing=state.db.items.filter(it=>it.category.toLocaleLowerCase()===category.toLocaleLowerCase());
+  $('smartHint').textContent=existing.length
+    ?`${existing.length} previous entr${existing.length===1?'y':'ies'} · most-used fields first`
+    :'Choose a category; all columns remain available';
   $('itemFields').innerHTML=cols.map(col=>{
-    const value=state.fieldDraft[col.id]||'';
-    const suggestions=[...new Set(existing.map(it=>it.values?.[col.id]).filter(Boolean))].slice(-15);
-    return `<label class="form-field"><span>${esc(col.label)}</span><input data-form-col="${esc(col.id)}" value="${esc(value)}" list="suggest_${esc(col.id)}" autocomplete="off" placeholder="${suggestions.length?'Reuse or enter…':'Optional'}" /><datalist id="suggest_${esc(col.id)}">${suggestions.map(x=>`<option value="${esc(x)}"></option>`).join('')}</datalist></label>`;
+    const value=state.fieldDraft[col.id]??'';
+    const suggestions=fieldValueSuggestions(state.db.items,col.id,category);
+    const n=suggestions.length;
+    return `<div class="form-field">
+      <label for="field_${esc(col.id)}">${esc(col.label)}</label>
+      <div class="field-input-wrap">
+        <input id="field_${esc(col.id)}" data-form-col="${esc(col.id)}"
+          value="${esc(value)}" role="combobox" aria-autocomplete="list"
+          aria-controls="fieldSuggestionMenu" aria-expanded="false"
+          autocomplete="off" placeholder="${n?'Select or type…':'Optional'}" />
+        <button class="field-suggest-toggle" data-suggestion-toggle="${esc(col.id)}"
+          type="button" aria-label="Show saved ${esc(col.label)} values"
+          title="${n?`${n} previously used value${n===1?'':'s'}`:'No previous values available'}"
+          ${n?'':'disabled'}>▾</button>
+      </div>
+    </div>`;
   }).join('');
 }
+
+let activeFieldSuggestion=null;
+function closeFieldSuggestions(){
+  if(activeFieldSuggestion){
+    activeFieldSuggestion.input.setAttribute('aria-expanded','false');
+    activeFieldSuggestion.input.removeAttribute('aria-activedescendant');
+  }
+  activeFieldSuggestion=null;
+  const menu=$('fieldSuggestionMenu');
+  menu.classList.add('hidden');
+  menu.innerHTML='';
+}
+function fieldSuggestionValues(fieldId,query=''){
+  if(fieldId==='__category__'){
+    const search=query.trim().toLocaleLowerCase();
+    return safeCategories().filter(c=>c.toLocaleLowerCase().includes(search))
+      .map(value=>({value,categoryCount:1,count:0}));
+  }
+  return fieldValueSuggestions(state.db.items,fieldId,$('itemCategory').value,query);
+}
+function markActiveSuggestion(index){
+  if(!activeFieldSuggestion)return;
+  const stateSuggestion=activeFieldSuggestion;
+  const count=stateSuggestion.values.length;
+  if(!count)return;
+  stateSuggestion.activeIndex=(index+count)%count;
+  const input=stateSuggestion.input;
+  const buttons=[...$('fieldSuggestionMenu').querySelectorAll('[data-suggestion-index]')];
+  for(const button of buttons){
+    const selected=Number(button.dataset.suggestionIndex)===stateSuggestion.activeIndex;
+    button.classList.toggle('active',selected);
+    button.setAttribute('aria-selected',String(selected));
+    if(selected){
+      input.setAttribute('aria-activedescendant',button.id);
+      button.scrollIntoView({block:'nearest'});
+    }
+  }
+}
+function showFieldSuggestions(input,fieldId,{all=false}={}){
+  if(!input)return;
+  closeFieldSuggestions();
+  const menu=$('fieldSuggestionMenu'),query=all?'':input.value;
+  const values=fieldSuggestionValues(fieldId,query);
+  const category=$('itemCategory').value.trim();
+  activeFieldSuggestion={input,fieldId,values,activeIndex:-1};
+  input.setAttribute('aria-expanded','true');
+  const options=values.map((entry,index)=>({
+    ...entry,index,sameCategory:fieldId==='__category__'||entry.categoryCount>0
+  }));
+  const current=options.filter(e=>e.sameCategory),other=options.filter(e=>!e.sameCategory);
+  const optionRows=entries=>entries.map(entry=>
+    `<button type="button" id="saved_value_option_${entry.index}" role="option"
+       aria-selected="false" class="field-suggestion-option"
+       data-suggestion-index="${entry.index}">
+      <span>${esc(entry.value)}</span>
+      ${entry.count>1?`<small>${entry.count} uses</small>`:''}
+    </button>`).join('');
+  menu.innerHTML=values.length
+    ?`${current.length?`<div class="field-suggestion-heading">${fieldId==='__category__'?'Available categories':`Used in ${esc(category||'this category')}`} · ${current.length}</div>${optionRows(current)}`:''}
+       ${other.length?`<div class="field-suggestion-heading">Other categories · ${other.length}</div>${optionRows(other)}`:''}`
+    :'<div class="field-suggestion-empty">No matching saved values. You can type a new one.</div>';
+  const rect=input.parentElement.getBoundingClientRect(),modal=$('itemDialog').getBoundingClientRect();
+  const availableWidth=Math.max(180,Math.min(440,window.innerWidth-24));
+  const width=Math.min(availableWidth,Math.max(220,rect.width));
+  const left=Math.max(12,Math.min(rect.left,window.innerWidth-width-12));
+  const height=Math.min(280,menu.scrollHeight||280);
+  const spaceBelow=window.innerHeight-rect.bottom;
+  const top=spaceBelow<160 && rect.top>spaceBelow
+    ?Math.max(12,rect.top-Math.min(280,height)-6)
+    :Math.min(window.innerHeight-48,rect.bottom+5);
+  menu.style.width=width+'px';
+  menu.style.left=left+'px';
+  menu.style.top=top+'px';
+  menu.classList.remove('hidden');
+  // Keep its scroll area usable even when the item editor itself scrolls.
+  if(menu.getBoundingClientRect().bottom>window.innerHeight-12 && rect.top>160){
+    menu.style.top=Math.max(12,rect.top-Math.min(280,menu.getBoundingClientRect().height)-6)+'px';
+  }
+}
+function chooseFieldSuggestion(index){
+  if(!activeFieldSuggestion)return;
+  const {input,fieldId,values}=activeFieldSuggestion;
+  const entry=values[index];
+  if(!entry)return;
+  closeFieldSuggestions();
+  input.value=entry.value;
+  if(fieldId==='__category__'){
+    state.fieldDraft=collectFields();
+    renderItemFields();
+    $('itemCategory').focus();
+  }else{
+    state.fieldDraft[fieldId]=entry.value;
+    input.focus();
+  }
+}
+
 function warningForName(){
   const name=$('itemName').value.trim(),match=allGroups().find(g=>g.key===keyFor(name));
   const warning=$('versionWarning');
@@ -267,7 +379,7 @@ function openItemDialog(item=null,clone=false,presetCategory=''){
   $('itemDialogTitle').textContent=clone?'New version of item':item?'Edit research item':'New research item';
   $('submitItem').textContent=clone?'Create version':item?'Save changes':'Save item';
   $('itemName').value=item?.name||'';$('itemCategory').value=item?.category||presetCategory;
-  $('categorySuggestions').innerHTML=safeCategories().map(c=>`<option value="${esc(c)}"></option>`).join('');
+  closeFieldSuggestions();
   renderItemFields();warningForName();openModal('itemDialog');if(!item)$('itemName').focus();
 }
 function submitItem(event){
@@ -277,7 +389,7 @@ function submitItem(event){
   if(!state.db.categories.includes(category))state.db.categories.push(category);
   if(state.editingId){const item=itemById(state.editingId);if(item){item.name=name;item.category=category;item.values=values;item.updatedAt=new Date().toISOString();}}
   else {const stamp=new Date().toISOString();state.db.items.push({id:makeId(),name,category,values,enteredAt:stamp,updatedAt:stamp});}
-  closeModal('itemDialog');changed();toast(state.editingId?'Item updated.':'Item version saved.');
+  closeFieldSuggestions();closeModal('itemDialog');changed();toast(state.editingId?'Item updated.':'Item version saved.');
 }
 function inlineEdit(el){
   if(el.querySelector('input'))return;
@@ -489,6 +601,50 @@ function registerEvents(){
   $('itemCategory').addEventListener('change',()=>{state.fieldDraft=collectFields();renderItemFields();});
   $('itemCategory').addEventListener('input',()=>{state.fieldDraft=collectFields();renderItemFields();});
   $('itemName').addEventListener('input',warningForName);$('itemForm').addEventListener('submit',submitItem);
+  $('itemDialog').addEventListener('close',closeFieldSuggestions);
+  $('itemDialog').addEventListener('cancel',closeFieldSuggestions);
+  $('itemForm').addEventListener('click',event=>{
+    const toggle=event.target.closest('[data-suggestion-toggle]');
+    if(!toggle||toggle.disabled)return;
+    const id=toggle.dataset.suggestionToggle;
+    const input=id==='__category__' ?$('itemCategory'):$('itemFields').querySelector('[data-form-col="'+CSS.escape(id)+'"]');
+    if(activeFieldSuggestion?.input===input){closeFieldSuggestions();return;}
+    showFieldSuggestions(input,id,{all:true});
+  });
+  $('itemForm').addEventListener('input',event=>{
+    const input=event.target;
+    if(input.id==='itemCategory'||input.matches('[data-form-col]'))
+      showFieldSuggestions(input,input.id==='itemCategory'?'__category__':input.dataset.formCol);
+  });
+  $('itemForm').addEventListener('keydown',event=>{
+    const input=event.target;
+    if(!(input.id==='itemCategory'||input.matches('[data-form-col]')))return;
+    const id=input.id==='itemCategory'?'__category__':input.dataset.formCol;
+    if(event.key==='Escape'&&activeFieldSuggestion){event.preventDefault();event.stopPropagation();closeFieldSuggestions();return;}
+    if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+      event.preventDefault();
+      if(!activeFieldSuggestion||activeFieldSuggestion.input!==input)
+        showFieldSuggestions(input,id,{all:!input.value});
+      markActiveSuggestion((activeFieldSuggestion?.activeIndex??-1)+(event.key==='ArrowDown'?1:-1));
+    }
+    if(event.key==='Enter'&&activeFieldSuggestion?.input===input&&activeFieldSuggestion.activeIndex>=0){
+      event.preventDefault();chooseFieldSuggestion(activeFieldSuggestion.activeIndex);
+    }
+  });
+  $('fieldSuggestionMenu').addEventListener('click',event=>{
+    const button=event.target.closest('[data-suggestion-index]');
+    if(button)chooseFieldSuggestion(Number(button.dataset.suggestionIndex));
+  });
+  document.addEventListener('pointerdown',event=>{
+    if(!activeFieldSuggestion)return;
+    if($('fieldSuggestionMenu').contains(event.target))return;
+    if(event.target===activeFieldSuggestion.input)return;
+    if(event.target.closest('[data-suggestion-toggle]'))return;
+    closeFieldSuggestions();
+  });
+  $('itemDialog').querySelector('.modal-body').addEventListener('scroll',closeFieldSuggestions,{passive:true});
+  window.addEventListener('resize',closeFieldSuggestions);
+
   $('cancelItem').addEventListener('click',()=>closeModal('itemDialog'));
   $('addFieldBtn').addEventListener('click',()=>{state.fieldDraft=collectFields();$('newFieldName').value='';openModal('fieldDialog');$('newFieldName').focus();});
   $('fieldForm').addEventListener('submit',event=>{event.preventDefault();const label=$('newFieldName').value.trim();if(!label)return;const col=addColumn(state.db,label);closeModal('fieldDialog');renderItemFields();document.querySelector(`[data-form-col="${CSS.escape(col.id)}"]`)?.focus();changed();});

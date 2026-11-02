@@ -488,6 +488,22 @@
       },
       "enteredAt": "2026-11-02T16:09:34.614Z",
       "updatedAt": "2026-11-02T16:09:34.614Z"
+    },
+    {
+      "id": "042103b0-504a-41b3-bc5d-0b939502d208",
+      "name": "Huh7",
+      "category": "Cell line",
+      "values": {
+        "media": "DMEM-Low glucose, 10% FCS, P/S",
+        "incubator": "5% CO2, 37℃",
+        "cellDensity": "5k",
+        "dishSize": "96-well",
+        "origin": "Human hepatocellular carcinoma",
+        "source": "Department",
+        "no_of_dishes": "1"
+      },
+      "enteredAt": "2026-11-02T16:22:35.382Z",
+      "updatedAt": "2026-11-02T16:22:35.382Z"
     }
   ],
   "checkouts": [

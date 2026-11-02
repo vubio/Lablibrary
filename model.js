@@ -93,6 +93,43 @@ export function sortLibraryGroups(groups,columnId='name',direction='asc'){
       ||collator.compare(a.latest.id,b.latest.id);
   });
 }
+// Suggest any historical value in a given column. Values used in the active
+// category come first, followed by values from other categories, so entries
+// remain useful even when the category contains no past examples.
+// No arbitrary 15-item truncation: the UI can display/scroll the full result.
+export function fieldValueSuggestions(items,columnId,category='',query=''){
+  const categoryKey=String(category||'').trim().toLocaleLowerCase();
+  const search=String(query||'').trim().toLocaleLowerCase();
+  const values=new Map();
+  for(const item of items||[]){
+    const raw=item?.values?.[columnId];
+    if(raw==null)continue;
+    const value=String(raw).trim();
+    if(!value)continue;
+    const normalized=value.replace(/\\s+/g,' ').toLocaleLowerCase();
+    const inCategory=String(item.category||'').trim().toLocaleLowerCase()===categoryKey;
+    let entry=values.get(normalized);
+    if(!entry){
+      entry={value,count:0,categoryCount:0,latestAt:0,categoryLatestAt:0};
+      values.set(normalized,entry);
+    }
+    entry.count++;
+    if(inCategory)entry.categoryCount++;
+    const t=Date.parse(item.updatedAt||item.enteredAt||'')||0;
+    if(t>=entry.latestAt){entry.latestAt=t;entry.value=value;}
+    if(inCategory&&t>=entry.categoryLatestAt)entry.categoryLatestAt=t;
+  }
+  return [...values.values()]
+    .filter(entry=>!search||entry.value.toLocaleLowerCase().includes(search))
+    .sort((a,b)=>
+      Number(b.categoryCount>0)-Number(a.categoryCount>0)
+      ||b.categoryCount-a.categoryCount
+      ||b.count-a.count
+      ||b.categoryLatestAt-a.categoryLatestAt
+      ||b.latestAt-a.latestAt
+      ||a.value.localeCompare(b.value,undefined,{sensitivity:'base',numeric:true})
+    );
+}
 export function fieldOrder(db,category){
   const matches=db.items.filter(x=>x.category.toLocaleLowerCase()===String(category).toLocaleLowerCase());
   if(!matches.length)return db.columns;

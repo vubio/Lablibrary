@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {emptyDatabase,groupItems,fieldOrder,importRows,mergeDatabases,toCsv,normalizeDatabase,toggleGroupSelection,toggleVersionSelection,differingVersionColumns,saveCheckoutRecord,sortLibraryGroups} from '../model.js';
+import {emptyDatabase,groupItems,fieldOrder,importRows,mergeDatabases,toCsv,normalizeDatabase,toggleGroupSelection,toggleVersionSelection,differingVersionColumns,saveCheckoutRecord,sortLibraryGroups,fieldValueSuggestions} from '../model.js';
 
 function row(id,name,category,enteredAt,values={}){return {id,name,category,enteredAt,updatedAt:enteredAt,values};}
 
@@ -215,4 +215,63 @@ test('sorting leaves earlier versions attached to their latest group',()=>{
   const ordered=sortLibraryGroups(groupItems(items),'cellLineCode','asc');
   assert.equal(ordered.length,2);
   assert.deepEqual(ordered.find(g=>g.latest.name==='A549').items.map(x=>x.id),['new','old']);
+});
+
+
+test('suggests every previously used value with no 15-value cap',()=>{
+  const items=Array.from({length:24},(_,i)=>row('record-'+i,'Material '+i,'Cell line',
+    '2026-10-26T00:00:00Z',{cellDensity:(i+1)+'k'}));
+  const options=fieldValueSuggestions(items,'cellDensity','Cell line');
+  assert.equal(options.length,24);
+  assert.equal(new Set(options.map(o=>o.value)).size,24);
+});
+
+test('prioritizes values from the current category, then other categories',()=>{
+  const items=[
+    row('1','Comp A','Drug','2026-10-26T00:00:00Z',{storage:'-20 freezer'}),
+    row('2','Comp B','Drug','2026-10-26T00:00:00Z',{storage:'-20 freezer'}),
+    row('3','Cell A','Cell line','2026-10-25T00:00:00Z',{storage:'37°C incubator'})
+  ];
+  const options=fieldValueSuggestions(items,'storage','Cell line');
+  assert.equal(options.length,2);
+  assert.equal(options[0].value,'37°C incubator');
+  assert.equal(options[0].categoryCount,1);
+  assert.equal(options[1].value,'-20 freezer');
+  assert.equal(options[1].categoryCount,0);
+  assert.equal(options[1].count,2);
+});
+
+test('filters suggestion values when typing without requiring exact matches',()=>{
+  const items=[
+    row('a','Cell A','Cell line','2026-10-25T00:00:00Z',{media:'DMEM High-glucose'}),
+    row('b','Cell B','Cell line','2026-10-25T00:00:00Z',{media:'RPMI 1640'}),
+    row('c','Cell C','Cell line','2026-10-25T00:00:00Z',{media:'DMEM Low-glucose'})
+  ];
+  assert.deepEqual(fieldValueSuggestions(items,'media','Cell line','dmem').map(x=>x.value),['DMEM High-glucose','DMEM Low-glucose']);
+  assert.deepEqual(fieldValueSuggestions(items,'media','Cell line','1640').map(x=>x.value),['RPMI 1640']);
+  assert.equal(fieldValueSuggestions(items,'media','Cell line','absent').length,0);
+});
+
+test('deduplicates case and whitespace variations while keeping historical values intact',()=>{
+  const items=[
+    row('a','Sample A','Cell line','2026-10-25T00:00:00Z',{source:'Department'}),
+    row('b','Sample B','Cell line','2026-10-26T00:00:00Z',{source:'  department  '}),
+    row('c','Sample C','Cell line','2026-10-27T00:00:00Z',{source:'DEPARTment'}),
+    row('d','Sample D','Cell line','2026-10-28T00:00:00Z',{source:'Shared   lab'})
+  ];
+  const options=fieldValueSuggestions(items,'source','Cell line');
+  assert.equal(options.length,2);
+  assert.equal(options.find(x=>x.value.toLowerCase()==='department').count,3);
+  assert.equal(items[1].values.source,'  department  ');
+});
+
+test('works for a brand-new category and excludes empty historical entries',()=>{
+  const items=[
+    row('a','A','Cell line','2026-10-25T00:00:00Z',{vendor:'Thermo'}),
+    row('b','B','Cell line','2026-10-25T00:00:00Z',{vendor:'  '}),
+    row('c','C','Drug','2026-10-25T00:00:00Z',{})
+  ];
+  const suggestions=fieldValueSuggestions(items,'vendor','New category');
+  assert.deepEqual(suggestions.map(x=>x.value),['Thermo']);
+  assert.equal(suggestions[0].categoryCount,0);
 });

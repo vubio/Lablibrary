@@ -164,7 +164,7 @@
     },
     {
       "id": "initial-20261022-06",
-      "name": "Phalloidin 488",
+      "name": "Alexa Fluor 488 Phalloidin",
       "category": "Fluorescent probe",
       "values": {
         "vendor": "Thermo",
@@ -176,7 +176,7 @@
         "lotNumber": "3184335"
       },
       "enteredAt": "2026-10-23T04:58:45.000Z",
-      "updatedAt": "2026-10-26T14:01:02.424Z"
+      "updatedAt": "2026-11-03T21:41:20.197Z"
     },
     {
       "id": "initial-20261022-07",
@@ -517,6 +517,66 @@
       },
       "enteredAt": "2026-11-02T16:24:51.696Z",
       "updatedAt": "2026-11-02T16:24:51.696Z"
+    },
+    {
+      "id": "76128e91-ebe7-4c77-bb9a-7af616b47b6b",
+      "name": "Alexa 555 Goat Anti-Rabbit",
+      "category": "2° antibody",
+      "values": {
+        "host": "Goat",
+        "workingConcentration": "1:500",
+        "vendor": "Thermo Fisher",
+        "storage": "Vu's Box 1, 4° fridge",
+        "catalogNumber": "A21428",
+        "lotNumber": "3317555"
+      },
+      "enteredAt": "2026-11-03T21:39:35.647Z",
+      "updatedAt": "2026-11-03T21:39:35.647Z"
+    },
+    {
+      "id": "7704c838-c3b3-4404-a0ed-a4314373a107",
+      "name": "Alexa 555 Goat Anti-Mouse",
+      "category": "2° antibody",
+      "values": {
+        "host": "Goat",
+        "workingConcentration": "1:500",
+        "vendor": "Thermo Fisher",
+        "storage": "Vu's Box 1, 4° fridge",
+        "catalogNumber": "A21422",
+        "lotNumber": "3476978"
+      },
+      "enteredAt": "2026-11-03T21:40:09.089Z",
+      "updatedAt": "2026-11-03T21:40:09.089Z"
+    },
+    {
+      "id": "c62c211c-e438-4eec-9750-66f4407ed32e",
+      "name": "Alexa Fluor 488 Phalloidin",
+      "category": "Fluorescent probe",
+      "values": {
+        "vendor": "Thermo",
+        "storage": "Vu's box, -20° freezer",
+        "stockConcentration": "400X in DMSO",
+        "workingConcentration": "1X",
+        "catalogNumber": "A12379",
+        "lotNumber": "3476996"
+      },
+      "enteredAt": "2026-11-03T21:41:10.111Z",
+      "updatedAt": "2026-11-03T21:41:10.111Z"
+    },
+    {
+      "id": "19d8a36e-eed6-4e37-ba4c-bd05c96e77dc",
+      "name": "Rabbit GPX4 Antibody",
+      "category": "1° antibody",
+      "values": {
+        "source": "From Yaqin's box",
+        "storage": "Yaqin's box, L5.226A -20 freezer",
+        "host": "Rabbit",
+        "stockConcentration": "1.0 mg/mL",
+        "catalogNumber": "ab41787",
+        "vendor": "abcam"
+      },
+      "enteredAt": "2026-11-03T22:55:29.380Z",
+      "updatedAt": "2026-11-03T22:59:21.718Z"
     }
   ],
   "checkouts": [

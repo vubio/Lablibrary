@@ -577,6 +577,20 @@
       },
       "enteredAt": "2026-11-03T22:55:29.380Z",
       "updatedAt": "2026-11-03T22:59:21.718Z"
+    },
+    {
+      "id": "064b2e01-d250-4ae0-b18c-4d094be52ed0",
+      "name": "Paraformaldehyde",
+      "category": "Fixative",
+      "values": {
+        "stockConcentration": "32%",
+        "workingConcentration": "4%",
+        "catalogNumber": "15714",
+        "vendor": "Electron microscopy sciences",
+        "lotNumber": "2026-42973"
+      },
+      "enteredAt": "2026-11-04T20:09:43.366Z",
+      "updatedAt": "2026-11-04T20:09:43.366Z"
     }
   ],
   "checkouts": [

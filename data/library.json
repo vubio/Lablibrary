@@ -612,6 +612,23 @@
       },
       "enteredAt": "2026-11-05T01:16:44.447Z",
       "updatedAt": "2026-11-05T01:17:03.523Z"
+    },
+    {
+      "id": "5fb3b350-aa8f-40f3-9415-5c43e9b29f4c",
+      "name": "SV589",
+      "category": "Cell line",
+      "values": {
+        "media": "DMEM-Low glucose, 5% FCS, P/S",
+        "incubator": "5% CO2, 37℃",
+        "cellDensity": "50k",
+        "dishSize": "12-well",
+        "source": "Department",
+        "origin": "Transformed human skin fibroblast",
+        "no_of_dishes": "1",
+        "coverslips": "18-mm"
+      },
+      "enteredAt": "2026-11-05T01:17:28.603Z",
+      "updatedAt": "2026-11-05T01:17:28.603Z"
     }
   ],
   "checkouts": [

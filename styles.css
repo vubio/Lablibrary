@@ -155,3 +155,29 @@
 .field-suggestion-option:hover,.field-suggestion-option.active{background:#eaf6ee;color:#0b765c}
 .field-suggestion-option:focus-visible{outline:2px solid #0c9075}
 .field-suggestion-empty{padding:14px 12px;font-size:11px;font-weight:500;color:#80958a;line-height:1.5}
+
+
+/* Reversible availability status: gone items remain visible, but visually subdued.
+   Never fade interactive actions, so the checkbox can always restore availability. */
+.data-table tr.gone-row td:not(:last-child){opacity:.53}
+.data-table tr.gone-row td:last-child{background:#f8faf9}
+.data-table tr.gone-row:hover td:last-child{background:#f4f8f6}
+.data-table tr.gone-row td:first-child{background:#fafbfa}
+.data-table tr.gone-row:hover td:first-child{background:#f7faf8}
+.gone-badge{flex:none;border:1px solid #d3ddd7;background:#f1f4f2;color:#72867b;padding:3px 6px;border-radius:5px;font-size:9px;font-weight:800;white-space:nowrap}
+.data-table th:last-child,.data-table td:last-child{min-width:235px}
+.row-actions{align-items:center}
+.row-gone-control{display:inline-flex;align-items:center;gap:5px;border:1px solid #e1e9e4;background:#f8faf8;border-radius:6px;padding:6px 7px;color:#597569;font-size:10px;font-weight:700;white-space:nowrap;cursor:pointer}
+.row-gone-control input{width:14px;height:14px;accent-color:#778e7e;cursor:pointer;margin:0}
+.row-gone-control:hover{background:#eff6f0;border-color:#b9d5c4}
+.row-gone-control:focus-within{outline:2px solid #2d9778;outline-offset:1px}
+.picker-group.latest-gone .picker-head .picker-title{opacity:.52}
+.picker-group.latest-gone .picker-head{background:#fafbfa}
+.picker-gone-label{color:#817f7d;font-weight:700}
+.version-entry.gone-version .version-choice{opacity:.48}
+.gone-preview-row td:not(.item-handle){opacity:.58;background:#f7f9f7}
+.item-gone-toggle{display:flex;gap:11px;align-items:flex-start;padding:11px 13px;margin-top:15px;background:#f6f9f6;border:1px solid #e2e9e3;border-radius:9px;color:#4e685b;cursor:pointer}
+.item-gone-toggle>input{width:17px;height:17px;flex:0 0 auto;accent-color:#617b6b;margin:2px 0 0}
+.item-gone-toggle strong{display:block;font-size:12px;color:#355348}
+.item-gone-toggle small{display:block;font-size:11px;color:#87998d;font-weight:400;line-height:1.5;margin-top:4px}
+.item-gone-toggle:focus-within{outline:2px solid #4a9277;outline-offset:2px}

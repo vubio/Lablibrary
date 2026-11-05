@@ -154,7 +154,7 @@ export function displayValue(item,id){if(id==='name')return item.name;if(id==='c
 // should identify a row, not count as a meaningful inventory-field change.
 export function differingVersionColumns(db,versions){
   if(!Array.isArray(versions)||versions.length<2)return [];
-  const columns=[{id:'category',label:'Category'},...db.columns.filter(c=>!['name','category','enteredAt','updatedAt'].includes(c.id))];
+  const columns=[{id:'category',label:'Category'},{id:'gone',label:'Gone / used up'},...db.columns.filter(c=>!['name','category','gone','enteredAt','updatedAt'].includes(c.id))];
   const known=new Set(columns.map(c=>c.id));
   for(const item of versions)for(const id of Object.keys(item.values||{})){
     if(known.has(id)||['name','category','enteredAt','updatedAt'].includes(id))continue;

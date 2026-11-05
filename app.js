@@ -1,7 +1,7 @@
 import {
   REPOSITORY,DATA_PATH,DEFAULT_COLUMNS,AUTO_COLUMNS,emptyDatabase,normalizeDatabase,
   makeId,keyFor,recentFirst,groupItems,fieldOrder,fieldValueSuggestions,displayValue,formatTime,sortLibraryGroups,
-  addColumn,mergeDatabases,importRows,toCsv,saveCheckoutRecord,toggleGroupSelection,toggleVersionSelection,differingVersionColumns
+  addColumn,mergeDatabases,importRows,toCsv,setItemGone,saveCheckoutRecord,toggleGroupSelection,toggleVersionSelection,differingVersionColumns
 } from './model.js';
 
 const $=id=>document.getElementById(id);
@@ -98,11 +98,11 @@ function renderLibrary(){
   $('libraryFootnote').textContent=`Showing ${matches.length} unique item${matches.length===1?'':'s'} · ${state.db.items.length} total records`;
 }
 function renderLibraryRow(item,cols,groupKey,isOld,expanded){
-  return `<tr class="${isOld?'version-row':''}" data-row-id="${esc(item.id)}">${cols.map(col=>{
+  return `<tr class="${[isOld?'version-row':'',item.gone?'gone-row':''].filter(Boolean).join(' ')}" data-row-id="${esc(item.id)}">${cols.map(col=>{
     const id=col.id;
-    if(id==='name')return `<td class="name-cell"><div class="table-name">${groupKey?`<button class="versions-toggle" data-expand="${esc(groupKey)}" aria-label="${expanded?'Hide':'Show'} previous versions">${expanded?'⌄':'›'}</button>`:'<span class="name-spacer"></span>'}<span class="editable-cell" data-edit="name" data-id="${esc(item.id)}">${esc(item.name)}</span>${groupKey?`<span class="version-badge">${groupItems(state.db.items).find(g=>g.key===groupKey)?.items.length||0} versions</span>`:isOld?'<span class="version-badge">Earlier</span>':''}</div></td>`;
+    if(id==='name')return `<td class="name-cell"><div class="table-name">${groupKey?`<button class="versions-toggle" data-expand="${esc(groupKey)}" aria-label="${expanded?'Hide':'Show'} previous versions">${expanded?'⌄':'›'}</button>`:'<span class="name-spacer"></span>'}<span class="editable-cell" data-edit="name" data-id="${esc(item.id)}">${esc(item.name)}</span>${groupKey?`<span class="version-badge">${groupItems(state.db.items).find(g=>g.key===groupKey)?.items.length||0} versions</span>`:isOld?'<span class="version-badge">Earlier</span>':''}${item.gone?'<span class="gone-badge" title="Gone / used up">Gone</span>':''}</div></td>`;
     return `<td class="${id==='category'?'category-cell':''} ${id==='enteredAt'?'':'editable-cell'}" ${id==='enteredAt'?'':`data-edit="${esc(id)}" data-id="${esc(item.id)}" title="Click to edit"`}>${esc(displayValue(item,id))||'<span style="color:#c6d2cb">—</span>'}</td>`;
-  }).join('')}<td><div class="row-actions"><button class="row-icon-btn" data-edit-item="${esc(item.id)}">Edit</button><button class="row-icon-btn" data-copy-version="${esc(item.id)}">＋ Version</button></div></td></tr>`;
+  }).join('')}<td><div class="row-actions"><label class="row-gone-control" title="${item.gone?'Marked gone. Uncheck to make available again.':'Mark this version gone / used up.'}"><input type="checkbox" data-toggle-gone="${esc(item.id)}" ${item.gone?'checked':''} aria-label="Gone / used up: ${esc(item.name)}" /><span>Gone</span></label><button class="row-icon-btn" data-edit-item="${esc(item.id)}">Edit</button><button class="row-icon-btn" data-copy-version="${esc(item.id)}">＋ Version</button></div></td></tr>`;
 }
 function renderPicker(){
   const term=$('checkoutSearch').value.trim().toLowerCase(),category=state.checkoutCategory;
@@ -111,12 +111,12 @@ function renderPicker(){
   $('pickerList').innerHTML=matches.map(g=>{
     const selectedCount=g.items.filter(it=>state.selected.has(it.id)).length;
     const checked=selectedCount>0,hasOld=g.items.length>1,expanded=state.checkoutExpanded.has(g.key);
-    return `<div class="picker-group">
-      <div class="picker-head">
+    return `<div class="picker-group ${g.latest.gone?'latest-gone':''}">
+      <div class="picker-head ${g.latest.gone?'gone-picker-head':''}">
         <input type="checkbox" data-check-group="${esc(g.key)}" ${checked?'checked':''} aria-label="${checked?'Remove all selected versions of':'Select newest version of'} ${esc(g.latest.name)}" title="${checked?'Uncheck to remove every selected version':'Select newest version'}" />
         <div class="picker-title">
           <div class="picker-name-line"><span>${esc(g.latest.name)}</span>${hasOld?`<button class="picker-compare-btn" type="button" data-compare-group="${esc(g.key)}" aria-label="Compare ${esc(g.latest.name)} versions" title="Show only fields that differ between versions">⇄ Compare</button>`:''}</div>
-          <div class="picker-sub">${esc(g.latest.category)}${hasOld?` · ${g.items.length} versions`:''}${selectedCount?` · ${selectedCount} selected`:''}</div>
+          <div class="picker-sub">${esc(g.latest.category)}${g.latest.gone?' · <span class="picker-gone-label">Gone / used up</span>':''}${hasOld?` · ${g.items.length} versions`:''}${selectedCount?` · ${selectedCount} selected`:''}</div>
         </div>
         <div class="picker-actions">
           <button class="picker-action-btn" type="button" data-edit-picker="${esc(g.latest.id)}" aria-label="Edit ${esc(g.latest.name)} latest version">Edit</button>
@@ -126,10 +126,10 @@ function renderPicker(){
       </div>
       ${expanded&&hasOld?`<div class="picker-versions">${g.items.map((it,index)=>{
         const detail=[it.values?.cellLineCode,it.values?.lotNumber?`Lot ${it.values.lotNumber}`:'',it.values?.workingConcentration].filter(Boolean).join(' · ');
-        return `<div class="version-entry">
+        return `<div class="version-entry ${it.gone?'gone-version':''}">
           <label class="version-choice">
             <input type="checkbox" data-choose-version="${esc(g.key)}" value="${esc(it.id)}" ${state.selected.has(it.id)?'checked':''} aria-label="Select ${esc(it.name)} ${index===0?'newest':'earlier'} version ${esc(detail)}" />
-            <span>${index===0?'Newest':'Earlier'} · ${esc(formatTime(it.enteredAt))}</span>
+            <span>${index===0?'Newest':'Earlier'} · ${esc(formatTime(it.enteredAt))}${it.gone?' · Gone / used up':''}</span>
             ${detail?`<small title="${esc(detail)}">${esc(detail)}</small>`:''}
           </label>
           <button type="button" class="picker-version-edit" data-edit-picker="${esc(it.id)}" aria-label="Edit this version of ${esc(it.name)}">Edit</button>
@@ -172,7 +172,7 @@ function renderCheckout(){
   $('checkoutPreview').innerHTML=orderedCategories([...byCategory.keys()]).map(category=>{
     const rows=orderedItems(byCategory.get(category),category),allCols=checkoutColumns(rows),excluded=checkoutPreferences().excludedColumns[category]||[];
     const visible=allCols.filter(c=>!excluded.includes(c.id));
-    return `<section class="checkout-card" data-category="${esc(category)}"><div class="checkout-card-head"><button class="drag-handle" draggable="true" data-drag-category="${esc(category)}" title="Drag to reorder tables">≡</button><span class="checkout-card-title">${esc(category)}</span><span class="checkout-card-subtitle">${rows.length} item${rows.length>1?'s':''}</span></div><div class="field-chips">${allCols.map(c=>`<label class="field-chip"><input type="checkbox" data-column-category="${esc(category)}" data-column-id="${esc(c.id)}" ${excluded.includes(c.id)?'':'checked'} />${esc(c.label)}</label>`).join('')}</div><div class="export-scroll"><table class="export-table"><thead><tr><th class="item-handle"></th>${visible.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead><tbody>${rows.map(it=>`<tr data-preview-row="${esc(it.id)}"><td class="item-handle"><div class="preview-row-controls"><button class="drag-handle" draggable="true" data-drag-item="${esc(it.id)}" data-drag-item-category="${esc(category)}" title="Drag to reorder items" aria-label="Move ${esc(it.name)}">≡</button><button class="preview-remove-item" type="button" data-remove-preview="${esc(it.id)}" title="Remove ${esc(it.name)} from this checkout" aria-label="Remove ${esc(it.name)} from preview">×</button></div></td>${visible.map(c=>`<td contenteditable="true" spellcheck="false" title="Edit only this checkout copy">${esc(displayValue(it,c.id))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`;
+    return `<section class="checkout-card" data-category="${esc(category)}"><div class="checkout-card-head"><button class="drag-handle" draggable="true" data-drag-category="${esc(category)}" title="Drag to reorder tables">≡</button><span class="checkout-card-title">${esc(category)}</span><span class="checkout-card-subtitle">${rows.length} item${rows.length>1?'s':''}</span></div><div class="field-chips">${allCols.map(c=>`<label class="field-chip"><input type="checkbox" data-column-category="${esc(category)}" data-column-id="${esc(c.id)}" ${excluded.includes(c.id)?'':'checked'} />${esc(c.label)}</label>`).join('')}</div><div class="export-scroll"><table class="export-table"><thead><tr><th class="item-handle"></th>${visible.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr></thead><tbody>${rows.map(it=>`<tr data-preview-row="${esc(it.id)}" class="${it.gone?'gone-preview-row':''}" title="${it.gone?'This material version is marked gone / used up':''}"><td class="item-handle"><div class="preview-row-controls"><button class="drag-handle" draggable="true" data-drag-item="${esc(it.id)}" data-drag-item-category="${esc(category)}" title="Drag to reorder items" aria-label="Move ${esc(it.name)}">≡</button><button class="preview-remove-item" type="button" data-remove-preview="${esc(it.id)}" title="Remove ${esc(it.name)} from this checkout" aria-label="Remove ${esc(it.name)} from preview">×</button></div></td>${visible.map(c=>`<td contenteditable="true" spellcheck="false" title="Edit only this checkout copy">${esc(displayValue(it,c.id))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`;
   }).join('');
 }
 
@@ -379,6 +379,7 @@ function openItemDialog(item=null,clone=false,presetCategory=''){
   $('itemDialogTitle').textContent=clone?'New version of item':item?'Edit research item':'New research item';
   $('submitItem').textContent=clone?'Create version':item?'Save changes':'Save item';
   $('itemName').value=item?.name||'';$('itemCategory').value=item?.category||presetCategory;
+  $('itemGone').checked=!!item&&!clone&&item.gone===true;
   closeFieldSuggestions();
   renderItemFields();warningForName();openModal('itemDialog');if(!item)$('itemName').focus();
 }
@@ -387,8 +388,8 @@ function submitItem(event){
   const values={};for(const [key,value] of Object.entries(collectFields()))if(String(value||'').trim())values[key]=String(value).trim();
   if(!state.editingId&&!state.cloning&&state.db.items.some(it=>keyFor(it.name)===keyFor(name))&&!window.confirm(`“${name}” already exists. Create a new version with this same name?`))return;
   if(!state.db.categories.includes(category))state.db.categories.push(category);
-  if(state.editingId){const item=itemById(state.editingId);if(item){item.name=name;item.category=category;item.values=values;item.updatedAt=new Date().toISOString();}}
-  else {const stamp=new Date().toISOString();state.db.items.push({id:makeId(),name,category,values,enteredAt:stamp,updatedAt:stamp});}
+  if(state.editingId){const item=itemById(state.editingId);if(item){item.name=name;item.category=category;item.values=values;item.gone=$('itemGone').checked;item.updatedAt=new Date().toISOString();}}
+  else {const stamp=new Date().toISOString();state.db.items.push({id:makeId(),name,category,gone:$('itemGone').checked,values,enteredAt:stamp,updatedAt:stamp});}
   closeFieldSuggestions();closeModal('itemDialog');changed();toast(state.editingId?'Item updated.':'Item version saved.');
 }
 function inlineEdit(el){
@@ -592,6 +593,16 @@ function registerEvents(){
     renderLibrary();
   });
   $('copyLibraryView').addEventListener('click',copyLibraryView);
+  $('libraryTable').addEventListener('change',event=>{
+    const control=event.target.closest('[data-toggle-gone]');
+    if(!control)return;
+    const item=itemById(control.dataset.toggleGone);
+    if(!item)return;
+    if(setItemGone(state.db,item.id,control.checked)){
+      changed();
+      toast(control.checked?'Marked gone / used up. It remains in the library.':'Material marked available again.');
+    }
+  });
   $('libraryTable').addEventListener('click',event=>{
     const toggle=event.target.closest('[data-expand]');if(toggle){const key=toggle.dataset.expand;if(state.expanded.has(key))state.expanded.delete(key);else state.expanded.add(key);renderLibrary();return;}
     const version=event.target.closest('[data-copy-version]');if(version){openItemDialog(itemById(version.dataset.copyVersion),true);return;}

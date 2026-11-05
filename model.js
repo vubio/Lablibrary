@@ -25,7 +25,7 @@ export function normalizeDatabase(input){
   const extra=Array.isArray(input.columns)?input.columns.filter(c=>c&&typeof c.id==='string'&&typeof c.label==='string'&&c.id!=='name'&&c.id!=='category'&&c.id!=='enteredAt'):[];
   seed.columns=uniqueBy([...DEFAULT_COLUMNS,...extra],c=>c.id).map(c=>({id:c.id,label:c.label}));
   seed.items=(Array.isArray(input.items)?input.items:[]).filter(x=>x&&typeof x.name==='string').map(x=>({
-    id:String(x.id||makeId()),name:String(x.name),category:String(x.category||'Uncategorized'),
+    id:String(x.id||makeId()),name:String(x.name),category:String(x.category||'Uncategorized'),gone:x.gone===true,
     values:typeof x.values==='object'&&x.values!==null&&!Array.isArray(x.values)?{...x.values}:{},
     enteredAt:String(x.enteredAt||x.createdAt||now()),updatedAt:String(x.updatedAt||x.enteredAt||now())
   }));
@@ -40,6 +40,18 @@ export function normalizeDatabase(input){
   seed.preferences={excludedColumns:(p.excludedColumns&&typeof p.excludedColumns==='object'?p.excludedColumns:{}),categoryOrder:Array.isArray(p.categoryOrder)?p.categoryOrder:[],itemOrder:(p.itemOrder&&typeof p.itemOrder==='object'?p.itemOrder:{})};
   for(const it of seed.items)if(!seed.categories.includes(it.category))seed.categories.push(it.category);
   return seed;
+}
+// Availability is tracked on each version, not by shared item name. The
+// timestamp is refreshed so sync can detect a changed record without changing
+// the immutable entry date.
+export function setItemGone(db,id,gone,timestamp=now()){
+  const item=db.items.find(row=>row.id===id);
+  if(!item)return false;
+  const next=gone===true;
+  if(item.gone===next)return false;
+  item.gone=next;
+  item.updatedAt=timestamp;
+  return true;
 }
 export function uniqueBy(items,getKey){const seen=new Set();return items.filter(x=>{const k=getKey(x);if(seen.has(k))return false;seen.add(k);return true;});}
 export function makeId(){return globalThis.crypto?.randomUUID?.() || `row_${Date.now()}_${Math.random().toString(36).slice(2)}`;}
@@ -137,7 +149,7 @@ export function fieldOrder(db,category){
   for(const it of matches)for(const [id,value] of Object.entries(it.values||{}))if(String(value??'').trim())score.set(id,(score.get(id)||0)+1);
   return [...db.columns].sort((a,b)=>(score.get(b.id)||0)-(score.get(a.id)||0));
 }
-export function displayValue(item,id){if(id==='name')return item.name;if(id==='category')return item.category;if(id==='enteredAt')return formatTime(item.enteredAt);return String(item.values?.[id]??'');}
+export function displayValue(item,id){if(id==='name')return item.name;if(id==='category')return item.category;if(id==='enteredAt')return formatTime(item.enteredAt);if(id==='gone')return item.gone?'Yes':'No';return String(item.values?.[id]??'');}
 // Compare versions using saved values, not timestamps: an automatic entry date
 // should identify a row, not count as a meaningful inventory-field change.
 export function differingVersionColumns(db,versions){
@@ -237,6 +249,7 @@ export function importRows(db,text,delimiter=','){
   const headers=rows[0].map(h=>h.trim());const map=headers.map(h=>{
     const normalized=normHeader(h);
     if(normalized==='name'||normalized==='category'||normalized==='enteredat')return normalized;
+    if(['gone','goneusedup','usedup','usedupgone','availabilitystatus'].includes(normalized))return 'gone';
     if(SYNONYMS[normalized])return SYNONYMS[normalized];
     const existing=db.columns.find(c=>normHeader(c.label)===normalized||normHeader(c.id)===normalized);
     return existing?.id||addColumn(db,h||'Unnamed field').id;
@@ -248,12 +261,12 @@ export function importRows(db,text,delimiter=','){
     const category=String(obj.category||'Uncategorized').trim();if(!db.categories.includes(category))db.categories.push(category);
     const timestamp=Date.parse(obj.enteredAt)?new Date(obj.enteredAt).toISOString():now();
     const values={};for(const col of db.columns)if(obj[col.id]!==undefined&&String(obj[col.id]).trim())values[col.id]=String(obj[col.id]).trim();
-    db.items.push({id:makeId(),name:String(obj.name).trim(),category,values,enteredAt:timestamp,updatedAt:now()});added++;
+    db.items.push({id:makeId(),name:String(obj.name).trim(),category,gone:/^(yes|true|1|gone|used up|used)$/i.test(String(obj.gone||'').trim()),values,enteredAt:timestamp,updatedAt:now()});added++;
   }
   return added;
 }
 export function toCsv(db){
-  const cols=[{id:'name',label:'Name'},{id:'category',label:'Category'},...db.columns,{id:'enteredAt',label:'Entry date and time'}];
+  const cols=[{id:'name',label:'Name'},{id:'category',label:'Category'},...db.columns,{id:'gone',label:'Gone / used up'},{id:'enteredAt',label:'Entry date and time'}];
   const esc=s=>`"${String(s??'').replaceAll('"','""')}"`;
   return [cols.map(c=>esc(c.label)).join(','),...db.items.map(it=>cols.map(c=>esc(c.id==='enteredAt'?it.enteredAt:displayValue(it,c.id))).join(','))].join('\r\n');
 }

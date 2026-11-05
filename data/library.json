@@ -607,10 +607,11 @@
         "dishSize": "6-well",
         "source": "Department",
         "origin": "Transformed human skin fibroblast",
-        "no_of_dishes": "1"
+        "no_of_dishes": "1",
+        "coverslips": "18-mm"
       },
       "enteredAt": "2026-11-05T01:16:44.447Z",
-      "updatedAt": "2026-11-05T01:16:44.447Z"
+      "updatedAt": "2026-11-05T01:17:03.523Z"
     }
   ],
   "checkouts": [

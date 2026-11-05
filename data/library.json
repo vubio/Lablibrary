@@ -93,6 +93,10 @@
     {
       "id": "no_of_dishes",
       "label": "No. of Dishes"
+    },
+    {
+      "id": "coverslips",
+      "label": "Coverslips"
     }
   ],
   "items": [

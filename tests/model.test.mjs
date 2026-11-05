@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {emptyDatabase,groupItems,fieldOrder,importRows,mergeDatabases,toCsv,normalizeDatabase,toggleGroupSelection,toggleVersionSelection,differingVersionColumns,saveCheckoutRecord,sortLibraryGroups,fieldValueSuggestions} from '../model.js';
+import {emptyDatabase,groupItems,fieldOrder,importRows,mergeDatabases,toCsv,normalizeDatabase,toggleGroupSelection,toggleVersionSelection,differingVersionColumns,saveCheckoutRecord,sortLibraryGroups,fieldValueSuggestions,setItemGone} from '../model.js';
 
 function row(id,name,category,enteredAt,values={}){return {id,name,category,enteredAt,updatedAt:enteredAt,values};}
 
@@ -274,4 +274,70 @@ test('works for a brand-new category and excludes empty historical entries',()=>
   const suggestions=fieldValueSuggestions(items,'vendor','New category');
   assert.deepEqual(suggestions.map(x=>x.value),['Thermo']);
   assert.equal(suggestions[0].categoryCount,0);
+});
+
+
+test('legacy material records without gone status remain available on normalization',()=>{
+  const db=emptyDatabase();
+  db.items=[row('v1','A549','Cell line','2026-10-22T00:00:00Z',{})];
+  const result=normalizeDatabase(db);
+  assert.equal(result.items[0].gone,false);
+});
+
+test('marking one item version gone preserves other versions and material history',()=>{
+  const db=normalizeDatabase(emptyDatabase());
+  db.items=[
+    {...row('older','A549','Cell line','2026-10-22T00:00:00Z',{cellLineCode:'WT'}),gone:false},
+    {...row('newer','A549','Cell line','2026-10-26T00:00:00Z',{cellLineCode:'DKO'}),gone:false}
+  ];
+  const changed=setItemGone(db,'older',true,'2026-11-04T23:00:00Z');
+  assert.equal(changed,true);
+  assert.equal(db.items.find(it=>it.id==='older').gone,true);
+  assert.equal(db.items.find(it=>it.id==='newer').gone,false);
+  assert.equal(db.items.find(it=>it.id==='older').enteredAt,'2026-10-22T00:00:00Z');
+  assert.equal(db.items.find(it=>it.id==='older').updatedAt,'2026-11-04T23:00:00Z');
+  assert.equal(groupItems(db.items)[0].items.length,2);
+  assert.equal(setItemGone(db,'older',true),false);
+  assert.equal(setItemGone(db,'older',false,'2026-11-05T00:00:00Z'),true);
+  assert.equal(db.items.find(it=>it.id==='older').gone,false);
+  assert.equal(setItemGone(db,'not-here',true),false);
+});
+
+test('CSV export and reimport preserve gone / used up status',()=>{
+  const db=emptyDatabase();
+  db.items=[
+    {...row('a','A549','Cell line','2026-10-22T00:00:00Z',{source:'Department'}),gone:true},
+    {...row('b','Huh7','Cell line','2026-10-23T00:00:00Z',{}),gone:false}
+  ];
+  const csv=toCsv(db);
+  assert.match(csv,/Gone \/ used up/);
+  const restored=emptyDatabase();
+  assert.equal(importRows(restored,csv,','),2);
+  assert.equal(restored.items.find(it=>it.name==='A549').gone,true);
+  assert.equal(restored.items.find(it=>it.name==='Huh7').gone,false);
+  assert.equal(restored.columns.some(c=>c.id==='gone'),false);
+});
+
+test('gone status changes only the specified version during cross-device merge',()=>{
+  const base=emptyDatabase();
+  base.items=[
+    {...row('a','A549','Cell line','2026-10-22T00:00:00Z',{}),gone:false},
+    {...row('b','Huh7','Cell line','2026-10-22T00:00:00Z',{}),gone:false}
+  ];
+  const local=normalizeDatabase(base),remote=normalizeDatabase(base);
+  setItemGone(local,'a',true,'2026-11-04T23:00:00Z');
+  setItemGone(remote,'b',true,'2026-11-04T23:00:10Z');
+  const merged=mergeDatabases(base,local,remote);
+  assert.deepEqual(merged.conflicts,[]);
+  assert.equal(merged.database.items.find(it=>it.id==='a').gone,true);
+  assert.equal(merged.database.items.find(it=>it.id==='b').gone,true);
+});
+
+test('version compare shows gone status only when versions differ in availability',()=>{
+  const db=emptyDatabase();
+  const older={...row('a','Erastin','Drug','2026-10-22T00:00:00Z',{}),gone:true};
+  const newer={...row('b','Erastin','Drug','2026-10-25T00:00:00Z',{}),gone:false};
+  assert.deepEqual(differingVersionColumns(db,[newer,older]).map(c=>c.id),['gone']);
+  older.gone=false;
+  assert.deepEqual(differingVersionColumns(db,[newer,older]),[]);
 });

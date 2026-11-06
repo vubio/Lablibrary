@@ -102,6 +102,10 @@
     {
       "id": "received_yymmddyy",
       "label": "Received (yymmddyy)"
+    },
+    {
+      "id": "link",
+      "label": "Link"
     }
   ],
   "items": [

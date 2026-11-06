@@ -97,6 +97,10 @@
     {
       "id": "coverslips",
       "label": "Coverslips"
+    },
+    {
+      "id": "received_yymmddyy",
+      "label": "Received (yymmddyy)"
     }
   ],
   "items": [
@@ -104,6 +108,7 @@
       "id": "initial-20261022-01",
       "name": "Alexa 647 Goat Anti-Rabbit",
       "category": "2° antibody",
+      "gone": false,
       "values": {
         "host": "Goat",
         "workingConcentration": "1:500",
@@ -118,6 +123,7 @@
       "id": "initial-20261022-02",
       "name": "Alexa 546 Goat Anti-Rabbit",
       "category": "2° antibody",
+      "gone": false,
       "values": {
         "host": "Goat",
         "workingConcentration": "1:500",
@@ -131,6 +137,7 @@
       "id": "initial-20261022-03",
       "name": "CellTiter-Glo Reagent",
       "category": "Assay reagent",
+      "gone": false,
       "values": {
         "catalogNumber": "G7570",
         "vendor": "Promega",
@@ -143,6 +150,7 @@
       "id": "initial-20261022-04",
       "name": "C11 BODIPY",
       "category": "Fluorescent probe",
+      "gone": false,
       "values": {
         "vendor": "Thermo",
         "storage": "Yaqin's box, -80 freezer"
@@ -154,6 +162,7 @@
       "id": "initial-20261022-05",
       "name": "Phalloidin Plus 405",
       "category": "Fluorescent probe",
+      "gone": false,
       "values": {
         "vendor": "Thermo",
         "storage": "Vu's box, -20° freezer",
@@ -170,6 +179,7 @@
       "id": "initial-20261022-06",
       "name": "Alexa Fluor 488 Phalloidin",
       "category": "Fluorescent probe",
+      "gone": false,
       "values": {
         "vendor": "Thermo",
         "storage": "Vu's box, -20° freezer",
@@ -186,6 +196,7 @@
       "id": "initial-20261022-07",
       "name": "SO3 PRDX3 (native)",
       "category": "1° antibody",
+      "gone": false,
       "values": {
         "cloneName": "5H7c",
         "host": "Rabbit",
@@ -202,6 +213,7 @@
       "id": "initial-20261022-08",
       "name": "A549 (WT)",
       "category": "Cell line",
+      "gone": false,
       "values": {
         "cellLineCode": "CCL-185 (WT)",
         "origin": "Human alveolar basal epithelial carcinoma",
@@ -218,6 +230,7 @@
       "id": "initial-20261022-09",
       "name": "A549 (GPX4/UBDX8 DKO)",
       "category": "Cell line",
+      "gone": false,
       "values": {
         "cellLineCode": "TR 5023-1k (GPX4/UBDX8 DKO)",
         "origin": "Human alveolar basal epithelial carcinoma",
@@ -234,6 +247,7 @@
       "id": "initial-20261022-10",
       "name": "SV589",
       "category": "Cell line",
+      "gone": false,
       "values": {
         "media": "DMEM-Low glucose, 5% FCS, P/S",
         "incubator": "5% CO2, 37℃",
@@ -248,6 +262,7 @@
       "id": "initial-20261022-11",
       "name": "HSC-T6",
       "category": "Cell line",
+      "gone": false,
       "values": {
         "origin": "Rat hepatic stellate cell",
         "source": "Department",
@@ -261,6 +276,7 @@
       "id": "initial-20261022-12",
       "name": "Huh7",
       "category": "Cell line",
+      "gone": false,
       "values": {
         "media": "DMEM-High glucose, 5% FCS, P/S",
         "incubator": "5% CO2, 37℃",
@@ -276,6 +292,7 @@
       "id": "initial-20261022-13",
       "name": "Arachidonic Acid",
       "category": "Chemicals",
+      "gone": false,
       "values": {
         "source": "From Yanchao",
         "storage": "Vu's box, -20 freezer",
@@ -289,6 +306,7 @@
       "id": "initial-20261022-14",
       "name": "Erastin 2",
       "category": "Drug",
+      "gone": false,
       "values": {
         "source": "From Yanchao",
         "storage": "Vu's box, -20 freezer",
@@ -302,6 +320,7 @@
       "id": "initial-20261022-15",
       "name": "Paraformaldehyde",
       "category": "Fixative",
+      "gone": false,
       "values": {
         "stockConcentration": "32%",
         "workingConcentration": "4%",
@@ -315,6 +334,7 @@
       "id": "24cf3cdb-255c-4ded-9a26-30a3cb26d6f4",
       "name": "SV589",
       "category": "Cell line",
+      "gone": false,
       "values": {
         "media": "DMEM-Low glucose, 5% FCS, P/S",
         "incubator": "5% CO2, 37℃",
@@ -329,6 +349,7 @@
       "id": "34833698-fc84-4a3b-a9d3-2d52a3a00984",
       "name": "Paraformaldehyde",
       "category": "Fixative",
+      "gone": false,
       "values": {
         "stockConcentration": "16%",
         "workingConcentration": "4% in PBS",
@@ -344,6 +365,7 @@
       "id": "95c626f5-d563-41d3-8a35-7d82673b3343",
       "name": "Prolong Diamond Antifade Mountant with DAPI",
       "category": "Others",
+      "gone": false,
       "values": {
         "catalogNumber": "P36962",
         "lotNumber": "3071458",
@@ -358,6 +380,7 @@
       "id": "3ccab826-0ac1-41e2-9db5-188ffbe80dd4",
       "name": "ProLong Glass Antifade Mountant",
       "category": "Others",
+      "gone": false,
       "values": {
         "catalogNumber": "P36980",
         "lotNumber": "3361453",
@@ -372,6 +395,7 @@
       "id": "77d36ca0-2c80-459b-a2e0-263868a5fb06",
       "name": "Huh7",
       "category": "Cell line",
+      "gone": false,
       "values": {
         "media": "DMEM-High glucose, 5% FCS, P/S",
         "incubator": "5% CO2, 37℃",
@@ -388,6 +412,7 @@
       "id": "5c15a05b-836c-4511-8672-8ebf9c280f29",
       "name": "HSC-T6",
       "category": "Cell line",
+      "gone": false,
       "values": {
         "origin": "Rat hepatic stellate cell",
         "source": "Department",
@@ -402,6 +427,7 @@
       "id": "e50d8df2-16e0-4977-9517-81a2a54c5dee",
       "name": "Retinol",
       "category": "Chemicals",
+      "gone": false,
       "values": {
         "stockConcentration": "10 mM in DMSO",
         "catalogNumber": "R7632-25MG",
@@ -415,6 +441,7 @@
       "id": "74c54d09-1c77-48f8-90d2-c6eeb376d413",
       "name": "SO3 PRDX3 (recombinant)",
       "category": "1° antibody",
+      "gone": false,
       "values": {
         "cloneName": "5H7c",
         "host": "Rabbit",
@@ -431,6 +458,7 @@
       "id": "62da0036-7601-4c12-ae2f-ced8d750db7d",
       "name": "Palmitic Acid",
       "category": "Chemicals",
+      "gone": false,
       "values": {
         "stockConcentration": "5 mM",
         "storage": "Yaqin's box, L5.226A -20 freezer"
@@ -442,6 +470,7 @@
       "id": "8fd4e5e4-584e-44ad-aeca-db25af6b5779",
       "name": "ThiolTracker™ Violet",
       "category": "Fluorescent probe",
+      "gone": false,
       "values": {
         "catalogNumber": "T10095",
         "vendor": "Thermo"
@@ -453,6 +482,7 @@
       "id": "59bcf510-3e44-4e63-a05f-c2ddf7674e8b",
       "name": "PBS (powder)",
       "category": "Chemicals",
+      "gone": false,
       "values": {
         "catalogNumber": "P4417-100TAB",
         "lotNumber": "0000528488",
@@ -467,6 +497,7 @@
       "id": "42a500a3-bc2f-49ba-b780-afd8ab3da1a1",
       "name": "HSC-T6",
       "category": "Cell line",
+      "gone": false,
       "values": {
         "origin": "Rat hepatic stellate cell",
         "source": "Department",
@@ -482,6 +513,7 @@
       "id": "09f0380c-9668-4f92-842b-8ecd4e8b9fd1",
       "name": "HSC-T6",
       "category": "Cell line",
+      "gone": false,
       "values": {
         "origin": "Rat hepatic stellate cell",
         "source": "Department",
@@ -497,6 +529,7 @@
       "id": "042103b0-504a-41b3-bc5d-0b939502d208",
       "name": "Huh7",
       "category": "Cell line",
+      "gone": false,
       "values": {
         "media": "DMEM-Low glucose, 10% FCS, P/S",
         "incubator": "5% CO2, 37℃",
@@ -513,6 +546,7 @@
       "id": "58fb9c25-0268-4c21-a44a-5bb9fef970ff",
       "name": "Arachidonic Acid",
       "category": "Chemicals",
+      "gone": false,
       "values": {
         "source": "From Yaqin's box",
         "storage": "Vu's box, -20 freezer",
@@ -526,6 +560,7 @@
       "id": "76128e91-ebe7-4c77-bb9a-7af616b47b6b",
       "name": "Alexa 555 Goat Anti-Rabbit",
       "category": "2° antibody",
+      "gone": false,
       "values": {
         "host": "Goat",
         "workingConcentration": "1:500",
@@ -541,6 +576,7 @@
       "id": "7704c838-c3b3-4404-a0ed-a4314373a107",
       "name": "Alexa 555 Goat Anti-Mouse",
       "category": "2° antibody",
+      "gone": false,
       "values": {
         "host": "Goat",
         "workingConcentration": "1:500",
@@ -556,6 +592,7 @@
       "id": "c62c211c-e438-4eec-9750-66f4407ed32e",
       "name": "Alexa Fluor 488 Phalloidin",
       "category": "Fluorescent probe",
+      "gone": false,
       "values": {
         "vendor": "Thermo",
         "storage": "Vu's box, -20° freezer",
@@ -571,6 +608,7 @@
       "id": "19d8a36e-eed6-4e37-ba4c-bd05c96e77dc",
       "name": "Rabbit GPX4 Antibody",
       "category": "1° antibody",
+      "gone": false,
       "values": {
         "source": "From Yaqin's box",
         "storage": "Yaqin's box, L5.226A -20 freezer",
@@ -586,6 +624,7 @@
       "id": "064b2e01-d250-4ae0-b18c-4d094be52ed0",
       "name": "Paraformaldehyde",
       "category": "Fixative",
+      "gone": false,
       "values": {
         "stockConcentration": "32%",
         "workingConcentration": "4%",
@@ -600,6 +639,7 @@
       "id": "98658abe-1955-48a1-9270-b02138159391",
       "name": "SV589",
       "category": "Cell line",
+      "gone": false,
       "values": {
         "media": "DMEM-Low glucose, 5% FCS, P/S",
         "incubator": "5% CO2, 37℃",
@@ -617,6 +657,7 @@
       "id": "5fb3b350-aa8f-40f3-9415-5c43e9b29f4c",
       "name": "SV589",
       "category": "Cell line",
+      "gone": false,
       "values": {
         "media": "DMEM-Low glucose, 5% FCS, P/S",
         "incubator": "5% CO2, 37℃",

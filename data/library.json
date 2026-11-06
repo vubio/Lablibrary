@@ -606,10 +606,11 @@
         "stockConcentration": "400X in DMSO",
         "workingConcentration": "1X",
         "catalogNumber": "A12379",
-        "lotNumber": "3476996"
+        "lotNumber": "3476996",
+        "source": "Vu's order"
       },
       "enteredAt": "2026-11-03T21:41:10.111Z",
-      "updatedAt": "2026-11-03T21:41:10.111Z"
+      "updatedAt": "2026-11-06T20:34:52.132Z"
     },
     {
       "id": "19d8a36e-eed6-4e37-ba4c-bd05c96e77dc",

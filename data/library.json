@@ -115,10 +115,11 @@
         "workingConcentration": "1:500",
         "vendor": "Thermo",
         "catalogNumber": "A21245",
-        "lotNumber": "3476997"
+        "lotNumber": "3476997",
+        "source": "Vu's order"
       },
       "enteredAt": "2026-10-23T04:58:40.000Z",
-      "updatedAt": "2026-10-30T14:17:08.048Z"
+      "updatedAt": "2026-11-06T20:34:45.806Z"
     },
     {
       "id": "initial-20261022-02",

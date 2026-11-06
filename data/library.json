@@ -357,10 +357,11 @@
         "catalogNumber": "12606",
         "vendor": "Cell Signaling",
         "storage": "RT",
-        "lotNumber": "48"
+        "lotNumber": "48",
+        "source": "Vu's order"
       },
       "enteredAt": "2026-10-26T13:48:02.726Z",
-      "updatedAt": "2026-10-28T12:23:00.118Z"
+      "updatedAt": "2026-11-06T20:34:15.379Z"
     },
     {
       "id": "95c626f5-d563-41d3-8a35-7d82673b3343",
@@ -433,10 +434,11 @@
         "stockConcentration": "10 mM in DMSO",
         "catalogNumber": "R7632-25MG",
         "vendor": "Millipore Sigma",
-        "storage": "Vu's box, -20 freezer"
+        "storage": "Vu's box, -20 freezer",
+        "source": "Vu's order"
       },
       "enteredAt": "2026-10-26T15:15:43.741Z",
-      "updatedAt": "2026-10-26T19:19:45.052Z"
+      "updatedAt": "2026-11-06T20:34:08.640Z"
     },
     {
       "id": "74c54d09-1c77-48f8-90d2-c6eeb376d413",
@@ -698,10 +700,11 @@
         "lotNumber": "0000713257",
         "vendor": "Promega",
         "storage": "RT (kit) | 4C (Neutralization Buffer)",
-        "received_yymmddyy": "261106"
+        "received_yymmddyy": "261106",
+        "source": "Vu's order"
       },
       "enteredAt": "2026-11-06T20:33:44.185Z",
-      "updatedAt": "2026-11-06T20:33:44.185Z"
+      "updatedAt": "2026-11-06T20:34:05.842Z"
     }
   ],
   "checkouts": [

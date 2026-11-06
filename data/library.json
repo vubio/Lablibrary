@@ -326,10 +326,11 @@
         "stockConcentration": "32%",
         "workingConcentration": "4%",
         "catalogNumber": "15714",
-        "vendor": "Electron microscopy sciences"
+        "vendor": "Electron microscopy sciences",
+        "source": "Vu's order"
       },
       "enteredAt": "2026-10-23T04:58:54.000Z",
-      "updatedAt": "2026-10-23T04:58:54.000Z"
+      "updatedAt": "2026-11-06T20:34:28.870Z"
     },
     {
       "id": "24cf3cdb-255c-4ded-9a26-30a3cb26d6f4",

@@ -20,7 +20,8 @@
     "Drug",
     "Others",
     "Chemicals",
-    "Cloning"
+    "Cloning",
+    "Plasmid"
   ],
   "columns": [
     {
@@ -714,6 +715,20 @@
       },
       "enteredAt": "2026-11-06T20:33:44.185Z",
       "updatedAt": "2026-11-06T20:34:05.842Z"
+    },
+    {
+      "id": "913d6e5b-85e3-4ac7-a172-f0cbf2030d99",
+      "name": "pLPCX cyto Grx1-roGFP2",
+      "category": "Plasmid",
+      "gone": false,
+      "values": {
+        "catalogNumber": "64975",
+        "vendor": "Addgene",
+        "received_yymmddyy": "261106",
+        "link": "https://www.addgene.org/64975/"
+      },
+      "enteredAt": "2026-11-06T20:49:45.371Z",
+      "updatedAt": "2026-11-06T20:49:45.371Z"
     }
   ],
   "checkouts": [

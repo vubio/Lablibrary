@@ -571,10 +571,11 @@
         "vendor": "Thermo Fisher",
         "storage": "Vu's Box 1, 4° fridge",
         "catalogNumber": "A21428",
-        "lotNumber": "3317555"
+        "lotNumber": "3317555",
+        "source": "Vu's order"
       },
       "enteredAt": "2026-11-03T21:39:35.647Z",
-      "updatedAt": "2026-11-03T21:39:35.647Z"
+      "updatedAt": "2026-11-06T20:34:42.621Z"
     },
     {
       "id": "7704c838-c3b3-4404-a0ed-a4314373a107",
@@ -587,10 +588,11 @@
         "vendor": "Thermo Fisher",
         "storage": "Vu's Box 1, 4° fridge",
         "catalogNumber": "A21422",
-        "lotNumber": "3476978"
+        "lotNumber": "3476978",
+        "source": "Vu's order"
       },
       "enteredAt": "2026-11-03T21:40:09.089Z",
-      "updatedAt": "2026-11-03T21:40:09.089Z"
+      "updatedAt": "2026-11-06T20:34:40.594Z"
     },
     {
       "id": "c62c211c-e438-4eec-9750-66f4407ed32e",

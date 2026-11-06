@@ -19,7 +19,8 @@
     "Other chemical",
     "Drug",
     "Others",
-    "Chemicals"
+    "Chemicals",
+    "Cloning"
   ],
   "columns": [
     {
@@ -686,6 +687,21 @@
       },
       "enteredAt": "2026-11-06T20:23:45.750Z",
       "updatedAt": "2026-11-06T20:23:45.750Z"
+    },
+    {
+      "id": "b01fc061-3a0e-4a36-bf8f-2381f1a0a821",
+      "name": "PureYield Plasmid Miniprep System",
+      "category": "Cloning",
+      "gone": false,
+      "values": {
+        "catalogNumber": "A1223",
+        "lotNumber": "0000713257",
+        "vendor": "Promega",
+        "storage": "RT (kit) | 4C (Neutralization Buffer)",
+        "received_yymmddyy": "261106"
+      },
+      "enteredAt": "2026-11-06T20:33:44.185Z",
+      "updatedAt": "2026-11-06T20:33:44.185Z"
     }
   ],
   "checkouts": [

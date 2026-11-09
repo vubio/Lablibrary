@@ -729,6 +729,18 @@
       },
       "enteredAt": "2026-11-06T20:49:45.371Z",
       "updatedAt": "2026-11-06T20:49:45.371Z"
+    },
+    {
+      "id": "cca35477-cb5a-48d7-84f3-6f494faed199",
+      "name": "Kanamycin/Ampicillin",
+      "category": "Cloning",
+      "gone": false,
+      "values": {
+        "workingConcentration": "1:1000",
+        "storage": "Lab's -20° freezer"
+      },
+      "enteredAt": "2026-11-09T21:33:33.642Z",
+      "updatedAt": "2026-11-09T21:33:33.642Z"
     }
   ],
   "checkouts": [

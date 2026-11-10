@@ -191,13 +191,13 @@
         "vendor": "Thermo",
         "storage": "Vu's box, -20° freezer",
         "stockConcentration": "400X in DMSO",
-        "workingConcentration": "1X",
+        "workingConcentration": "1:1000 (0.4X)",
         "source": "From Yanchao",
         "catalogNumber": "A12379",
         "lotNumber": "3184335"
       },
       "enteredAt": "2026-10-23T04:58:45.000Z",
-      "updatedAt": "2026-11-03T21:41:20.197Z"
+      "updatedAt": "2026-11-10T13:42:27.467Z"
     },
     {
       "id": "initial-20261022-07",

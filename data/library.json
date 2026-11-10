@@ -741,6 +741,20 @@
       },
       "enteredAt": "2026-11-09T21:33:33.642Z",
       "updatedAt": "2026-11-09T21:33:33.642Z"
+    },
+    {
+      "id": "7c97ce70-a44c-455f-961a-86c1717b16d9",
+      "name": "BSA fatty acid free",
+      "category": "Chemicals",
+      "gone": false,
+      "values": {
+        "catalogNumber": "A7030-100G",
+        "lotNumber": "0000588738",
+        "vendor": "Sigma-Aldrich",
+        "storage": "Lab's L5.226A 4C freezer"
+      },
+      "enteredAt": "2026-11-10T16:12:07.694Z",
+      "updatedAt": "2026-11-10T16:12:07.694Z"
     }
   ],
   "checkouts": [

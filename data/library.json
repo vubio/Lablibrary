@@ -755,6 +755,23 @@
       },
       "enteredAt": "2026-11-10T16:12:07.694Z",
       "updatedAt": "2026-11-10T16:12:07.694Z"
+    },
+    {
+      "id": "07decd08-4738-48fa-b82e-4df677194914",
+      "name": "SV589 ACSL4-/- (KO)",
+      "category": "Cell line",
+      "gone": false,
+      "values": {
+        "cellLineCode": "TR 4680-2-10n",
+        "origin": "Human alveolar basal epithelial carcinoma",
+        "source": "Department",
+        "cellDensity": "100k",
+        "dishSize": "35-mm (MatTek glass bottom)",
+        "incubator": "5% CO2, 37℃",
+        "media": "DMEM-Low glucose, 10% FCS, P/S"
+      },
+      "enteredAt": "2026-11-13T22:24:34.699Z",
+      "updatedAt": "2026-11-13T22:24:34.699Z"
     }
   ],
   "checkouts": [

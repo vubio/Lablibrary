@@ -169,7 +169,7 @@ export function slug(s){return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'_'
 export function renameColumn(db,id,newLabel){
   const column=db.columns.find(c=>c.id===id);
   if(!column)throw new Error('Only editable data columns can be renamed.');
-  const label=String(newLabel??'').trim().replace(/\\s+/g,' ');
+  const label=String(newLabel??'').trim().replace(/\s+/g,' ');
   if(!label)throw new Error('Enter a column name.');
   if(label.length>120)throw new Error('Keep column names within 120 characters.');
   const reserved=[...AUTO_COLUMNS,{id:'gone',label:'Gone / used up'},{id:'actions',label:'Actions'}];

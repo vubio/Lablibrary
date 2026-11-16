@@ -1,7 +1,7 @@
 import {
   REPOSITORY,DATA_PATH,DEFAULT_COLUMNS,AUTO_COLUMNS,emptyDatabase,normalizeDatabase,
   makeId,keyFor,recentFirst,groupItems,fieldOrder,fieldValueSuggestions,displayValue,formatTime,sortLibraryGroups,
-  addColumn,mergeDatabases,importRows,toCsv,setItemGone,saveCheckoutRecord,toggleGroupSelection,toggleVersionSelection,differingVersionColumns
+  addColumn,renameColumn,mergeDatabases,importRows,toCsv,setItemGone,saveCheckoutRecord,toggleGroupSelection,toggleVersionSelection,differingVersionColumns
 } from './model.js';
 
 const $=id=>document.getElementById(id);
@@ -19,7 +19,7 @@ function rememberGithubToken(token,remember){
 function forgetRememberedToken(){try{localStorage.removeItem(REMEMBERED_TOKEN_KEY);}catch{}}
 
 const API=`https://api.github.com/repos/${REPOSITORY}/contents/${DATA_PATH}`;
-const state={db:emptyDatabase(),baseDb:emptyDatabase(),baseSha:null,dirty:false,revision:0,token:sessionStorage.getItem(TOKEN_KEY)||readRememberedToken(),busy:false,networkError:'',currentPage:'library',librarySort:{column:'name',direction:'asc'},selected:new Set(),expanded:new Set(),checkoutExpanded:new Set(),checkoutCategory:'',activeCheckoutId:null,checkoutPrefs:null,editingId:null,cloning:false,fieldDraft:{},syncTimer:null,toastTimer:null};
+const state={db:emptyDatabase(),baseDb:emptyDatabase(),baseSha:null,dirty:false,revision:0,token:sessionStorage.getItem(TOKEN_KEY)||readRememberedToken(),busy:false,networkError:'',currentPage:'library',librarySort:{column:'name',direction:'asc'},selected:new Set(),expanded:new Set(),checkoutExpanded:new Set(),checkoutCategory:'',activeCheckoutId:null,checkoutPrefs:null,editingId:null,cloning:false,renamingColumnId:null,fieldDraft:{},syncTimer:null,toastTimer:null};
 
 function toast(message,error=false){const el=$('toast');el.textContent=message;el.classList.toggle('error',error);el.classList.remove('hidden');clearTimeout(state.toastTimer);state.toastTimer=setTimeout(()=>el.classList.add('hidden'),3600);}
 function setNotice(message='',danger=false){$('notice').textContent=message;$('notice').classList.toggle('hidden',!message);$('notice').classList.toggle('danger',danger);}
@@ -84,7 +84,13 @@ function renderLibrary(){
   table.querySelector('thead').innerHTML=`<tr>${cols.map(c=>{
     const active=state.librarySort.column===c.id;
     const direction=state.librarySort.direction;
-    return `<th scope="col" data-col-id="${esc(c.id)}" aria-sort="${active?(direction==='asc'?'ascending':'descending'):'none'}"><button type="button" class="library-sort-button ${active?'active':''}" data-sort-column="${esc(c.id)}" title="Sort by ${esc(c.label)}${active?' (click to reverse)':''}"><span>${esc(c.label)}</span><span class="sort-indicator" aria-hidden="true">${active?(direction==='asc'?'▲':'▼'):'↕'}</span></button></th>`;
+    const renameable=state.db.columns.some(col=>col.id===c.id);
+    return `<th scope="col" data-col-id="${esc(c.id)}" aria-sort="${active?(direction==='asc'?'ascending':'descending'):'none'}">
+      <div class="library-heading-controls">
+        <button type="button" class="library-sort-button ${active?'active':''}" data-sort-column="${esc(c.id)}" title="Sort by ${esc(c.label)}${active?' (click to reverse)':''}"><span>${esc(c.label)}</span><span class="sort-indicator" aria-hidden="true">${active?(direction==='asc'?'▲':'▼'):'↕'}</span></button>
+        ${renameable?`<button type="button" class="library-rename-column" data-rename-column="${esc(c.id)}" aria-label="Rename ${esc(c.label)} column" title="Rename column heading (data unchanged)">✎</button>`:''}
+      </div>
+    </th>`;
   }).join('')}<th scope="col">Actions</th></tr>`;
   table.querySelector('tbody').innerHTML=matches.map(g=>{
     const chosen=g.items.find(it=>(!category||it.category===category)&&(!term||[it.name,it.category,...Object.values(it.values||{})].some(x=>String(x).toLocaleLowerCase().includes(term))))||g.latest;
@@ -374,6 +380,33 @@ function warningForName(){
   if(!state.editingId&&!state.cloning&&match){warning.classList.remove('hidden');warning.innerHTML=`A record named <strong>${esc(match.latest.name)}</strong> exists (${match.items.length} version${match.items.length>1?'s':''}). Saving this name will create a new version.`;}
   else warning.classList.add('hidden');
 }
+function openRenameColumnDialog(id){
+  const column=state.db.columns.find(c=>c.id===id);
+  if(!column)return;
+  state.renamingColumnId=id;
+  $('renameColumnName').value=column.label;
+  $('renameColumnError').textContent='';
+  $('renameColumnError').classList.add('hidden');
+  openModal('renameColumnDialog');
+  $('renameColumnName').focus();
+  $('renameColumnName').select();
+}
+function submitRenameColumn(event){
+  event.preventDefault();
+  if(!state.renamingColumnId)return;
+  try{
+    const edited=renameColumn(state.db,state.renamingColumnId,$('renameColumnName').value);
+    closeModal('renameColumnDialog');
+    state.renamingColumnId=null;
+    if(edited){
+      changed();
+      toast('Column heading renamed. All existing data is unchanged.');
+    }
+  }catch(err){
+    $('renameColumnError').textContent=err.message;
+    $('renameColumnError').classList.remove('hidden');
+  }
+}
 function openItemDialog(item=null,clone=false,presetCategory=''){
   state.editingId=item&&!clone?item.id:null;state.cloning=!!clone;state.fieldDraft={...(item?.values||{})};
   $('itemDialogTitle').textContent=clone?'New version of item':item?'Edit research item':'New research item';
@@ -584,6 +617,8 @@ function registerEvents(){
     else{$('libraryCategory').value=btn.dataset.filterCategory;renderCategories();renderLibrary();}
   });
   $('libraryTable').querySelector('thead').addEventListener('click',event=>{
+    const renameButton=event.target.closest('[data-rename-column]');
+    if(renameButton){openRenameColumnDialog(renameButton.dataset.renameColumn);return;}
     const button=event.target.closest('[data-sort-column]');
     if(!button)return;
     const col=button.dataset.sortColumn;
@@ -609,6 +644,12 @@ function registerEvents(){
     const edit=event.target.closest('[data-edit-item]');if(edit){openItemDialog(itemById(edit.dataset.editItem));return;}
     const cell=event.target.closest('[data-edit]');if(cell)inlineEdit(cell);
   });
+  $('renameColumnForm').addEventListener('submit',submitRenameColumn);
+  $('renameColumnName').addEventListener('input',()=>{
+    $('renameColumnError').textContent='';
+    $('renameColumnError').classList.add('hidden');
+  });
+  $('renameColumnDialog').addEventListener('close',()=>{state.renamingColumnId=null;});
   $('itemCategory').addEventListener('change',()=>{state.fieldDraft=collectFields();renderItemFields();});
   $('itemCategory').addEventListener('input',()=>{state.fieldDraft=collectFields();renderItemFields();});
   $('itemName').addEventListener('input',warningForName);$('itemForm').addEventListener('submit',submitItem);

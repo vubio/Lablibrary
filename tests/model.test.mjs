@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {emptyDatabase,groupItems,fieldOrder,importRows,mergeDatabases,toCsv,normalizeDatabase,toggleGroupSelection,toggleVersionSelection,differingVersionColumns,saveCheckoutRecord,sortLibraryGroups,fieldValueSuggestions,setItemGone} from '../model.js';
+import {emptyDatabase,groupItems,fieldOrder,importRows,mergeDatabases,toCsv,normalizeDatabase,toggleGroupSelection,toggleVersionSelection,differingVersionColumns,saveCheckoutRecord,sortLibraryGroups,fieldValueSuggestions,setItemGone,renameColumn} from '../model.js';
 
 function row(id,name,category,enteredAt,values={}){return {id,name,category,enteredAt,updatedAt:enteredAt,values};}
 
@@ -340,4 +340,73 @@ test('version compare shows gone status only when versions differ in availabilit
   assert.deepEqual(differingVersionColumns(db,[newer,older]).map(c=>c.id),['gone']);
   older.gone=false;
   assert.deepEqual(differingVersionColumns(db,[newer,older]),[]);
+});
+
+
+test('renaming a column changes only the label and keeps every stored value',()=>{
+  const db=emptyDatabase();
+  db.columns.push({id:'received_yymmddyy',label:'Received (yymmddyy)'});
+  db.items=[
+    row('a','PureYield Plasmid Miniprep System','Others','2026-11-06T00:00:00Z',{received_yymmddyy:'261106'}),
+    row('b','pLPCX cyto Grx1-roGFP2','Others','2026-11-06T00:00:00Z',{received_yymmddyy:'261106'})
+  ];
+  const snapshot=JSON.stringify(db.items);
+  const idBefore=db.columns.at(-1).id;
+  assert.equal(renameColumn(db,idBefore,'Received (yymmdd)'),true);
+  assert.equal(db.columns.at(-1).label,'Received (yymmdd)');
+  assert.equal(db.columns.at(-1).id,idBefore);
+  assert.equal(JSON.stringify(db.items),snapshot);
+  assert.equal(toCsv(db).includes('Received (yymmdd)'),true);
+  assert.equal(toCsv(db).includes('261106'),true);
+  assert.equal(renameColumn(db,idBefore,'Received (yymmdd)'),false);
+});
+
+test('rename validation prevents empty, reserved, and duplicate column names',()=>{
+  const db=emptyDatabase();
+  db.columns.push({id:'extra',label:'Custom field'});
+  assert.throws(()=>renameColumn(db,'extra','  '));
+  assert.throws(()=>renameColumn(db,'extra',' Name '));
+  assert.throws(()=>renameColumn(db,'extra','Category'));
+  assert.throws(()=>renameColumn(db,'extra','Gone / used up'));
+  assert.throws(()=>renameColumn(db,'extra','Actions'));
+  assert.throws(()=>renameColumn(db,'extra',db.columns[0].label.toUpperCase()));
+  assert.throws(()=>renameColumn(db,'not-a-column','Anything'));
+  assert.equal(db.columns.at(-1).label,'Custom field');
+});
+
+test('remote column rename remains visible after merging local item edits',()=>{
+  const baseline=emptyDatabase();
+  baseline.columns.push({id:'received_yymmddyy',label:'Received (yymmddyy)'});
+  baseline.items.push(row('x','Plasmid','Others','2026-11-06T00:00:00Z',{received_yymmddyy:'261106'}));
+  const remote=normalizeDatabase(baseline),local=normalizeDatabase(baseline);
+  renameColumn(remote,'received_yymmddyy','Received (yymmdd)');
+  local.items[0].values.notes='checked';
+  const merge=mergeDatabases(baseline,local,remote);
+  assert.deepEqual(merge.conflicts,[]);
+  assert.equal(merge.database.columns.find(c=>c.id==='received_yymmddyy').label,'Received (yymmdd)');
+  assert.equal(merge.database.items[0].values.received_yymmddyy,'261106');
+  assert.equal(merge.database.items[0].values.notes,'checked');
+});
+
+test('local column rename survives a concurrent remote change to another column',()=>{
+  const baseline=emptyDatabase();
+  baseline.columns.push({id:'received_yymmddyy',label:'Received (yymmddyy)'},{id:'custom',label:'Custom'});
+  const local=normalizeDatabase(baseline),remote=normalizeDatabase(baseline);
+  renameColumn(local,'received_yymmddyy','Received (yymmdd)');
+  renameColumn(remote,'custom','Custom changed');
+  const merge=mergeDatabases(baseline,local,remote);
+  assert.deepEqual(merge.conflicts,[]);
+  assert.equal(merge.database.columns.find(c=>c.id==='received_yymmddyy').label,'Received (yymmdd)');
+  assert.equal(merge.database.columns.find(c=>c.id==='custom').label,'Custom changed');
+});
+
+test('conflicting concurrent renames are reported rather than silently overwriting',()=>{
+  const baseline=emptyDatabase();
+  baseline.columns.push({id:'received_yymmddyy',label:'Received (yymmddyy)'});
+  const local=normalizeDatabase(baseline),remote=normalizeDatabase(baseline);
+  renameColumn(local,'received_yymmddyy','Received (yymmdd)');
+  renameColumn(remote,'received_yymmddyy','Received date (yymmdd)');
+  const merge=mergeDatabases(baseline,local,remote);
+  assert.equal(merge.conflicts.length,1);
+  assert.match(merge.conflicts[0],/column heading/);
 });

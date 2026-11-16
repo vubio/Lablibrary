@@ -164,6 +164,21 @@ export function differingVersionColumns(db,versions){
 }
 export function formatTime(value){const t=Date.parse(value);if(!Number.isFinite(t))return String(value||'');return new Date(t).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
 export function slug(s){return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,40)||'field';}
+// Rename only the visible heading. Item values, preferences and saved checkouts
+// address the stable column ID; they must never be migrated for a label edit.
+export function renameColumn(db,id,newLabel){
+  const column=db.columns.find(c=>c.id===id);
+  if(!column)throw new Error('Only editable data columns can be renamed.');
+  const label=String(newLabel??'').trim().replace(/\\s+/g,' ');
+  if(!label)throw new Error('Enter a column name.');
+  if(label.length>120)throw new Error('Keep column names within 120 characters.');
+  const reserved=[...AUTO_COLUMNS,{id:'gone',label:'Gone / used up'},{id:'actions',label:'Actions'}];
+  const duplicate=[...db.columns,...reserved].some(c=>c.id!==id&&c.label.toLocaleLowerCase()===label.toLocaleLowerCase());
+  if(duplicate)throw new Error('Another column already uses that name.');
+  if(column.label===label)return false;
+  column.label=label;
+  return true;
+}
 export function addColumn(db,label){const clean=label.trim();const existing=db.columns.find(c=>c.label.toLocaleLowerCase()===clean.toLocaleLowerCase());if(existing)return existing;let id=slug(clean),n=2;while([...db.columns,...AUTO_COLUMNS].some(c=>c.id===id))id=`${slug(clean)}_${n++}`;const col={id,label:clean};db.columns.push(col);return col;}
 // Saving another experiment must never overwrite the active one implicitly.
 // An existing plan is updated only when the explicit "update" action is chosen.
@@ -190,7 +205,26 @@ export function mergeDatabases(base,local,remote){
   base=normalizeDatabase(base);local=normalizeDatabase(local);remote=normalizeDatabase(remote);
   const out=normalizeDatabase(remote),conflicts=[];
   out.categories=[...new Set([...remote.categories,...local.categories])];
-  out.columns=uniqueBy([...remote.columns,...local.columns],c=>c.id);
+  // Three-way merge for column headings. A rename is keyed by the immutable ID.
+  // Accept independent new columns/renames, detect conflicting simultaneous renames.
+  const baseColumns=new Map(base.columns.map(c=>[c.id,c]));
+  const localColumns=new Map(local.columns.map(c=>[c.id,c]));
+  const remoteColumns=new Map(remote.columns.map(c=>[c.id,c]));
+  const mergedColumns=new Map(remote.columns.map(c=>[c.id,{...c}]));
+  for(const [id,mine] of localColumns){
+    const before=baseColumns.get(id),theirs=remoteColumns.get(id);
+    const mineChanged=mine.label!==(before?.label);
+    const theirsChanged=theirs?.label!==(before?.label);
+    if(mineChanged&&theirsChanged&&mine.label!==theirs?.label){
+      conflicts.push('column heading: '+(before?.label||id));
+    }else if(mineChanged){
+      mergedColumns.set(id,{...mine});
+    }else if(!theirs){
+      mergedColumns.set(id,{...mine});
+    }
+  }
+  out.columns=[...mergedColumns.values()];
+
   const bm=new Map(base.items.map(it=>[it.id,it])),lm=new Map(local.items.map(it=>[it.id,it])),rm=new Map(remote.items.map(it=>[it.id,it]));
   for(const id of new Set([...lm.keys(),...rm.keys(),...bm.keys()])){
     const before=bm.get(id),mine=lm.get(id),theirs=rm.get(id);

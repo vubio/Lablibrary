@@ -107,6 +107,10 @@
     {
       "id": "link",
       "label": "Link"
+    },
+    {
+      "id": "code",
+      "label": "Code"
     }
   ],
   "items": [

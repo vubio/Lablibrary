@@ -784,6 +784,23 @@
       },
       "enteredAt": "2026-11-13T22:24:34.699Z",
       "updatedAt": "2026-11-13T22:24:34.699Z"
+    },
+    {
+      "id": "c617bbfc-27a0-4bfd-b0fe-670b506343a4",
+      "name": "pLPCX cyto Grx1-roGFP2",
+      "category": "Plasmid",
+      "gone": false,
+      "values": {
+        "catalogNumber": "64975",
+        "vendor": "Addgene",
+        "link": "https://www.addgene.org/64975/",
+        "stockConcentration": "245 ng/ul",
+        "code": "VN1 (2)",
+        "miniprep": "26.11.11",
+        "insert": "Grx1-roGFP2"
+      },
+      "enteredAt": "2026-11-16T21:06:42.828Z",
+      "updatedAt": "2026-11-16T21:06:42.828Z"
     }
   ],
   "checkouts": [

@@ -787,7 +787,7 @@
     },
     {
       "id": "c617bbfc-27a0-4bfd-b0fe-670b506343a4",
-      "name": "pLPCX cyto Grx1-roGFP2",
+      "name": "VN1 (2) pLPCX cyto Grx1-roGFP2",
       "category": "Plasmid",
       "gone": false,
       "values": {
@@ -800,7 +800,7 @@
         "insert": "Grx1-roGFP2"
       },
       "enteredAt": "2026-11-16T21:06:42.828Z",
-      "updatedAt": "2026-11-16T21:06:42.828Z"
+      "updatedAt": "2026-11-16T21:07:53.546Z"
     }
   ],
   "checkouts": [

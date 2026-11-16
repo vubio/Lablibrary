@@ -115,6 +115,10 @@
     {
       "id": "miniprep",
       "label": "Miniprep"
+    },
+    {
+      "id": "insert",
+      "label": "Insert"
     }
   ],
   "items": [

@@ -102,7 +102,7 @@
     },
     {
       "id": "received_yymmddyy",
-      "label": "Received (yymmddyy)"
+      "label": "Received (yymmdd)"
     },
     {
       "id": "link",

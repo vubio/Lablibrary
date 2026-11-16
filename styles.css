@@ -181,3 +181,13 @@
 .item-gone-toggle strong{display:block;font-size:12px;color:#355348}
 .item-gone-toggle small{display:block;font-size:11px;color:#87998d;font-weight:400;line-height:1.5;margin-top:4px}
 .item-gone-toggle:focus-within{outline:2px solid #4a9277;outline-offset:2px}
+
+
+/* Column labels can be renamed independently of their internal field IDs. */
+.library-heading-controls{display:flex;align-items:center;gap:5px;min-width:0}
+.library-heading-controls .library-sort-button{flex:1 1 auto;min-width:0}
+.library-heading-controls .library-sort-button>span:first-child{overflow-wrap:anywhere}
+.library-rename-column{flex:0 0 auto;width:22px;height:24px;border:1px solid transparent;border-radius:5px;background:transparent;color:#91aa9d;display:grid;place-items:center;font-size:13px;line-height:1;cursor:pointer}
+.library-rename-column:hover{background:#e6f5ec;border-color:#c9e1d3;color:#087965}
+.library-rename-column:focus-visible{outline:2px solid #0c9171;outline-offset:2px;color:#087965}
+.rename-column-error{margin-top:11px;font-size:12px;font-weight:700;color:#b43e3e}

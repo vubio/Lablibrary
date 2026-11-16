@@ -111,6 +111,10 @@
     {
       "id": "code",
       "label": "Code"
+    },
+    {
+      "id": "miniprep",
+      "label": "Miniprep"
     }
   ],
   "items": [

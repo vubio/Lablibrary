@@ -818,6 +818,25 @@
       },
       "enteredAt": "2026-11-16T21:08:20.369Z",
       "updatedAt": "2026-11-16T21:35:45.362Z"
+    },
+    {
+      "id": "c8e93d77-0e53-48ed-99a5-e96cac20e3c6",
+      "name": "Rabbit GPX4 Antibody",
+      "category": "1° antibody",
+      "gone": false,
+      "values": {
+        "storage": "Vu antibodies (-20)",
+        "host": "Rabbit",
+        "stockConcentration": "0.456 mg/ml",
+        "catalogNumber": "ab125066",
+        "vendor": "abcam",
+        "workingConcentration": "IHC 1/50 - 1/250 (Recommended: heat-mediated antigen retrieval before IHC staining)",
+        "lotNumber": "1168878-2",
+        "received_yymmddyy": "261117",
+        "link": "https://www.abcam.com/en-us/products/primary-antibodies/glutathione-peroxidase-4-antibody-epncir144-ab125066"
+      },
+      "enteredAt": "2026-11-17T22:00:50.167Z",
+      "updatedAt": "2026-11-17T22:00:50.167Z"
     }
   ],
   "checkouts": [
